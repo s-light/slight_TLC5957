@@ -1,5 +1,8 @@
-
 /******************************************************************************
+
+    arduino library for TI TLC5957 48-channel 16bit LED-Driver.
+    tested with LEDBoard_4x4_HD and Pololu A-Star (32U4 - Leonardo compatible)
+        (https://github.com/s-light/magic_amulet_pcbs)
 
     written by stefan krueger (s-light),
         github@s-light.eu, http://s-light.eu, https://github.com/s-light/
@@ -30,37 +33,65 @@
 ******************************************************************************/
 
 
+
+#ifndef slight_TLC5957_H_
+#define slight_TLC5957_H_
+
 // include Core Arduino functionality
 #include <Arduino.h>
 
-// include SPI library
-#include <SPI.h>
 
-// include own headerfile
-#include "src/TLC5957.h"
+class slight_TLC5957 {
+public:
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// definitions
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // constructor
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// functions
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    slight_TLC5957();
+    // slight_TLC5957(uint8_t twi_address, uint8_t interrupt_pin);
 
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // attributes
 
-slight_TLC5957::slight_TLC5957() {
-    ready = false;
-}
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // public types
 
 
-bool slight_TLC5957::begin() {
-    if (ready == false) {
-        // setup
-        // TODO(s-light): implement.
-    }
-    return ready;
-}
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // public functions
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-void slight_TLC5957::update() {
-    // TODO(s-light): implement.
-}
+    // basic library api
+    bool begin();
+    void write();
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // gloal helpers
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // individual registers
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // configurations
+
+private:
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // private functions
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // attributes
+    bool ready;
+
+    uint8_t chipCount;
+
+    uint8_t latPin;
+    uint8_t gclkPin;
+
+};  // class slight_TLC5957
+
+#endif  // slight_TLC5957_H_
