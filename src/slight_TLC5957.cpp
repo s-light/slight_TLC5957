@@ -49,22 +49,48 @@
 
 
 slight_TLC5957::slight_TLC5957(
-    uint8_t chipCount, uint8_t lat_pin, uint8_t gclk_pin
-): lat_pin(lat_pin), gclk_pin(gclk_pin) {
+    uint8_t chip_count, uint8_t lat_pin, uint8_t gclk_pin
+): lat_pin(lat_pin), gclk_pin(gclk_pin) buffer(
+    reinterpret_cast<uint16_t*> calloc(chip_count, chip_buffer_byte_count)
+) {
     ready = false;
+}
+
+slight_TLC5957::~slight_TLC5957() {
+    end();
+    free(buffer);
 }
 
 
 bool slight_TLC5957::begin() {
+    // clean up..
+    end();
+    // start up...
     if (ready == false) {
         // setup
         pinMode(lat_pin, OUTPUT);
         pinMode(gclk_pin, OUTPUT);
         // TODO(s-light): implement.
+        SPI.begin();
+        SPI.beginTransaction(SPISettings(spiClock, MSBFIRST, SPI_MODE0));
     }
     return ready;
 }
 
+void Tlc59711::end() {
+  if (ready) {
+    SPI.endTransaction();
+    SPI.end();
+  }
+}
+
 void slight_TLC5957::write() {
     // TODO(s-light): implement.
+}
+
+void slight_TLC5957::generate_function_command(
+    slight_TLC5957::function_commands_SCLK_pulse_count function_command
+) {
+    // TODO(s-light): implement.
+    digitalWrite(lat_pin)
 }

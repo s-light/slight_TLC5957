@@ -56,7 +56,7 @@ public:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // constructor
 
-    slight_TLC5957(uint8_t chipCount, uint8_t lat_pin, uint8_t gclk_pin);
+    slight_TLC5957(uint8_t chip_count, uint8_t lat_pin, uint8_t gclk_pin);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes
@@ -161,6 +161,8 @@ public:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // gloal helpers
 
+    const uint8_t chip_buffer_bit_count = 48;
+    const uint8_t chip_buffer_byte_count = chip_buffer_bit_count / 8;
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // individual registers
@@ -175,15 +177,18 @@ private:
     // private functions
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    void generate_function_command(function_commands_SCLK_pulse_count);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes
     bool ready;
 
-    uint8_t chipCount;
+    uint8_t chip_count;
 
     const uint8_t lat_pin;
     const uint8_t gclk_pin;
+    const uint8_t sclk_pin;
+    const uint8_t sio_pin;
 
     uint16_t buffer_size;
     uint16_t *buffer;
