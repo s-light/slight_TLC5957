@@ -37,7 +37,7 @@
 #include <SPI.h>
 
 // include own headerfile
-#include "src/slight_TLC5957.h"
+#include "slight_TLC5957.h"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // definitions
@@ -49,8 +49,8 @@
 
 
 slight_TLC5957::slight_TLC5957(
-    uint8_t chipCount, uint8_t latPin, uint8_t gclkPin
-) {
+    uint8_t chipCount, uint8_t lat_pin, uint8_t gclk_pin
+): lat_pin(lat_pin), gclk_pin(gclk_pin) {
     ready = false;
 }
 
@@ -58,8 +58,8 @@ slight_TLC5957::slight_TLC5957(
 bool slight_TLC5957::begin() {
     if (ready == false) {
         // setup
-        pinMode(latPin, OUTPUT);
-        pinMode(gclkPin, OUTPUT);
+        pinMode(lat_pin, OUTPUT);
+        pinMode(gclk_pin, OUTPUT);
         // TODO(s-light): implement.
     }
     return ready;

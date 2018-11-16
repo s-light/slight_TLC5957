@@ -47,8 +47,7 @@ public:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // constructor
 
-    slight_TLC5957();
-    // slight_TLC5957(uint8_t twi_address, uint8_t interrupt_pin);
+    slight_TLC5957(uint8_t chipCount, uint8_t lat_pin, uint8_t gclk_pin);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes
@@ -89,8 +88,11 @@ private:
 
     uint8_t chipCount;
 
-    uint8_t latPin;
-    uint8_t gclkPin;
+    const uint8_t lat_pin;
+    const uint8_t gclk_pin;
+
+    uint16_t buffer_size;
+    uint16_t *buffer;
 
 };  // class slight_TLC5957
 
