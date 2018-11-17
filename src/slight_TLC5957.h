@@ -56,7 +56,15 @@ public:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // constructor
 
-    slight_TLC5957(uint8_t chip_count, uint8_t lat_pin, uint8_t gclk_pin);
+    slight_TLC5957(
+        uint8_t chip_count,
+        uint8_t lat_pin,
+        uint8_t gclk_pin,
+        uint8_t sclk_pin = SCK,
+        uint8_t sout_pin = MOSI,
+        uint8_t sin_pin = MISO
+    );
+    ~slight_TLC5957();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes
@@ -155,7 +163,8 @@ public:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     // basic library api
-    bool begin();
+    void begin();
+    void end();
     void write();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,6 +188,10 @@ private:
 
     void generate_function_command(function_commands_SCLK_pulse_count);
 
+    inline static void spi_write_buffer(void *buf_write, size_t count);
+    inline static void spi_read_buffer(void *buf_read, size_t count);
+    inline static void spi_transfer_buffer(void *buf_write, void *buf_read, size_t count);
+
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes
     bool ready;
@@ -188,7 +201,8 @@ private:
     const uint8_t lat_pin;
     const uint8_t gclk_pin;
     const uint8_t sclk_pin;
-    const uint8_t sio_pin;
+    const uint8_t sout_pin;
+    const uint8_t sin_pin;
 
     uint16_t buffer_size;
     uint16_t *buffer;
