@@ -9,7 +9,11 @@
             Arduino compatible (with serial port)
             LED on pin 13
             TLC5957
-                TODO
+                lat_pin = 7
+                gclk_pin = 5
+                sclk_pin = SCK
+                sout_pin = MOSI
+                sin_pin = MISO
 
 
     libraries used:
@@ -148,8 +152,17 @@ slight_DebugMenu myDebugMenu(Serial, Serial, 15);
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TLC5957
 
-// slight_TLC5957(uint8_t chipCount, uint8_t lat_pin, uint8_t gclk_pin);
-slight_TLC5957 tlc = slight_TLC5957(1, 7, 5);
+// possible options and defaults:
+// slight_TLC5957(
+//     uint8_t chip_count,
+//     uint8_t lat_pin = 7,
+//     uint8_t gclk_pin = 5,
+//     uint8_t sclk_pin = SCK,
+//     uint8_t sout_pin = MOSI,
+//     uint8_t sin_pin = MISO
+// );
+// use default pins
+slight_TLC5957 tlc = slight_TLC5957(1);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // functions
@@ -196,14 +209,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("\t 'x': tests"));
             out.println();
             // out.println();
-            // out.println(F("\t 's': sensitivity set [1, 2, .., 64, 128] 's128'"));
-            // out.println(F("\t 'S': sensitivity get "));
-            // out.println(F("\t 'a': auto config - load recommend configuration"));
-            // out.println(F("\t 'p': print things "));
-            // out.println(F("\t 't': touch status get "));
-            // out.println(F("\t 'c': electrode config get "));
-            // out.println(F("\t 'e': electrode config electrode enable set 'e12'"));
-            // out.println(F("\t 'E': electrode config electrode enable get "));
+            out.println(F("\t 'f': test fc 'f'"));
             out.println();
             out.println(F("____________________________________________________________"));
         } break;
@@ -245,123 +251,53 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             //
             // out.println();
 
-            // out.println(F("    bit test"));
-            // out.print(F("      8 (1 << 3) "));
-            // slight_DebugMenu::print_Binary_8(
-            //     out,
-            //     (0b1 << 3)
-            // );
-            // out.println();
-            // out.print(F("      8 (1 << 7) "));
-            // slight_DebugMenu::print_Binary_8(
-            //     out,
-            //     (0b1 << 7)
-            // );
-            // out.println();
-            // out.print(F("     16 (1 << 3) "));
-            // slight_DebugMenu::print_Binary_16(
-            //     out,
-            //     (0b1 << 3)
-            // );
-            // out.println();
-            // out.print(F("     16 (1 << 15) "));
-            // slight_DebugMenu::print_Binary_16(
-            //     out,
-            //     (0b1 << 15)
-            // );
-            // out.println();
-            //
-            // uint32_t u32 = 0;
-            // out.print(F("     32 ((uint32_t)1 << 3) "));
-            // u32 = ((uint32_t)1 << 3);
-            // out.print(F(" : "));
-            // out.print(u32, BIN);
-            // out.print(F(" : "));
-            // slight_DebugMenu::print_Binary_32(
-            //     out,
-            //     u32
-            // );
-            // out.println();
-            // out.print(F("     32 (1 << 17) "));
-            // u32 = ((uint32_t)1 << 17);
-            // out.print(F(" : "));
-            // out.print(u32, BIN);
-            // out.print(F(" : "));
-            // slight_DebugMenu::print_Binary_32(
-            //     out,
-            //     u32
-            // );
-            // out.println();
-            // out.print(F("     32 (1 << 31) "));
-            // u32 = ((uint32_t)1 << 31);
-            // out.print(F(" : "));
-            // out.print(u32, BIN);
-            // out.print(F(" : "));
-            // slight_DebugMenu::print_Binary_32(
-            //     out,
-            //     u32
-            // );
-            // out.println();
-            // out.print(F("     32 (4,294,967,295) "));
-            // u32 = (4294967295);
-            // out.print(F(" : "));
-            // out.print(u32, BIN);
-            // out.print(F(" : "));
-            // slight_DebugMenu::print_Binary_32(
-            //     out,
-            //     u32
-            // );
-            // out.println();
-
-            // out.println(F("test set_register16bit_part: "));
-            //
-            //
-            // uint16_t temp = 0b0001110000001111;
-            //
-            // out.println(F("original value: "));
-            // slight_DebugMenu::print_Binary_16(out, temp);
-            // // out.print(F("; "));
-            // // out.print(temp, HEX);
-            // // out.print(F("; "));
-            // // out.print(temp, BIN);
-            // // out.print(F("; "));
-            // // out.print(temp);
-            // out.println();
-            //
-            // // static uint16_t set_register16bit_part(
-            // //     uint16_t reg_value,
-            // //     uint16_t reg_mask,
-            // //     uint8_t reg_shift,
-            // //     uint8_t value
-            // // );
-            // out.println(F("set part"));
-            // temp = slight_FDC1004::set_register16bit_part(
-            //     temp,
-            //     0b0001110000000000,
-            //     10,
-            //     0b001
-            // );
-            // out.println(F("result:"));
-            // slight_DebugMenu::print_Binary_16(out, temp);
-            // out.println();
-
-
-            // temp = 0b0000000000111000;
-            // out.print(F("0b0000000000111000: "));
-            // slight_DebugMenu::print_Binary_16(out, temp);
-            // out.print(F("; "));
-            // out.print(temp, HEX);
-            // out.print(F("; "));
-            // out.print(temp, BIN);
-            // out.print(F("; "));
-            // out.print(temp);
-            // out.println();
-
-
-
             out.println(F("__________"));
         } break;
         //---------------------------------------------------------------------
+        case 'w': {
+            // get state
+            out.println(F("test write."));
+            uint8_t value = atoi(&command[1]);
+            switch (value) {
+                case 0: {
+                    out.println(F("write"));
+                    tlc.write();
+                } break;
+                case 1: {
+                    out.println(F("fc_WRTGS"));
+                    tlc.generate_function_command(fc_WRTGS);
+                } break;
+                case 3: {
+                    out.println(F("fc_LATGS"));
+                    tlc.generate_function_command(fc_LATGS);
+                } break;
+                case 5: {
+                    out.println(F("fc_WRTFC"));
+                    tlc.generate_function_command(fc_WRTFC);
+                } break;
+                case 7: {
+                    out.println(F("fc_LINERESET"));
+                    tlc.generate_function_command(fc_LINERESET);
+                } break;
+                case 11: {
+                    out.println(F("fc_READFC"));
+                    tlc.generate_function_command(fc_READFC);
+                } break;
+                case 13: {
+                    out.println(F("fc_TMGRST"));
+                    tlc.generate_function_command(fc_TMGRST);
+                } break;
+                case 15: {
+                    out.println(F("fc_FCWRTEN"));
+                    tlc.generate_function_command(fc_FCWRTEN);
+                } break;
+            }
+        } break;
+        case 'g': {
+            // get state
+            out.println(F("toggle GS-clock."));
+            out.println(F("TODO"));
+        } break;
         //---------------------------------------------------------------------
         default: {
             if(strlen(command) > 0) {

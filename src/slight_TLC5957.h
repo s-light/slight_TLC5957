@@ -58,8 +58,8 @@ public:
 
     slight_TLC5957(
         uint8_t chip_count,
-        uint8_t lat_pin,
-        uint8_t gclk_pin,
+        uint8_t lat_pin = 7,
+        uint8_t gclk_pin = 5,
         uint8_t sclk_pin = SCK,
         uint8_t sout_pin = MOSI,
         uint8_t sin_pin = MISO
@@ -115,7 +115,7 @@ public:
     //     enable writes to FC
     //     this must send before WRTFC
     //
-    enum function_commands_SCLK_pulse_count {
+    enum function_command_pulse_count {
         fc_WRTGS = 1,
         fc_LATGS = 3,
         fc_WRTFC = 5,
@@ -180,13 +180,16 @@ public:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // configurations
 
+    void generate_function_command(
+        function_command_pulse_count function_command
+    );
+
 private:
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // private functions
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    void generate_function_command(function_commands_SCLK_pulse_count);
 
     inline static void spi_write_buffer(void *buf_write, size_t count);
     inline static void spi_read_buffer(void *buf_read, size_t count);

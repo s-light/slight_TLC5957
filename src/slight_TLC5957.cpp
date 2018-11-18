@@ -83,7 +83,8 @@ void slight_TLC5957::begin() {
         pinMode(gclk_pin, OUTPUT);
         // TODO(s-light): implement.
         SPI.begin();
-        SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+        // SPI.beginTransaction(SPISettings(10 * 1000000, MSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings(1 * 1000000, MSBFIRST, SPI_MODE0));
     }
 }
 
@@ -98,9 +99,7 @@ void slight_TLC5957::end() {
 // special non overwritting spi functions
 // https://forum.arduino.cc/index.php?topic=421756.msg2904845#msg2904845
 
-void slight_TLC5957::spi_write_buffer(
-    void *buf_write, size_t count
-) {
+void slight_TLC5957::spi_write_buffer(void *buf_write, size_t count) {
     if (count == 0) return;
     uint8_t *p_out = reinterpret_cast<uint8_t *>(buf_write);
     SPDR = *p_out;
@@ -118,9 +117,7 @@ void slight_TLC5957::spi_write_buffer(
     while (!(SPSR & _BV(SPIF))) {}
 }
 
-void slight_TLC5957::spi_read_buffer(
-    void *buf_read, size_t count
-) {
+void slight_TLC5957::spi_read_buffer(void *buf_read, size_t count) {
     if (count == 0) return;
     uint8_t *p_in = reinterpret_cast<uint8_t *>(buf_read);
     // init transfer
@@ -175,7 +172,7 @@ void slight_TLC5957::write() {
 }
 
 void slight_TLC5957::generate_function_command(
-    slight_TLC5957::function_commands_SCLK_pulse_count function_command
+    slight_TLC5957::function_command_pulse_count function_command
 ) {
     // faster speeds with direct port access...
     // https://forum.arduino.cc/index.php?topic=4324.0
