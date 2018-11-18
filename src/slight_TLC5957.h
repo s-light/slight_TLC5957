@@ -59,7 +59,7 @@ public:
     slight_TLC5957(
         uint8_t chip_count,
         uint8_t lat_pin = 7,
-        uint8_t gclk_pin = 5,
+        uint8_t gclk_pin = 9,
         uint8_t sclk_pin = SCK,
         uint8_t sout_pin = MOSI,
         uint8_t sin_pin = MISO
@@ -165,11 +165,12 @@ public:
     // basic library api
     void begin();
     void end();
-    void write();
+    void update();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // gloal helpers
 
+    const uint8_t led_per_chip_count = 16;
     const uint8_t chip_buffer_bit_count = 48;
     const uint8_t chip_buffer_byte_count = chip_buffer_bit_count / 8;
 
@@ -180,20 +181,21 @@ public:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // configurations
 
-    void generate_function_command(
-        function_command_pulse_count function_command
+    void write_SPI_with_function_command(
+        function_command_pulse_count function_command,
+        uint16_t value
     );
 
+
+    const uint16_t buffer_byte_count;
+    uint16_t *buffer;
+    
 private:
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // private functions
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-    inline static void spi_write_buffer(void *buf_write, size_t count);
-    inline static void spi_read_buffer(void *buf_read, size_t count);
-    inline static void spi_transfer_buffer(void *buf_write, void *buf_read, size_t count);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes
@@ -207,8 +209,7 @@ private:
     const uint8_t sout_pin;
     const uint8_t sin_pin;
 
-    uint16_t buffer_size;
-    uint16_t *buffer;
+
 
 };  // class slight_TLC5957
 
