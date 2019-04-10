@@ -222,11 +222,14 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("__________"));
         } break;
         case 'f': {
+            out.print(F("set frequency - new value:"));
             // float value = atof(&command[1]);
             // // convert from MHz to Hz
             // value = value * 1000*1000;
             // gsclock_set_frequency(value);
             uint8_t value = atoi(&command[1]);
+            out.print(value);
+            out.println();
             set_D9_period(value);
         } break;
         //---------------------------------------------------------------------
@@ -300,10 +303,24 @@ void setup_D9_1to40MHz() {
     TC3->COUNT8.CTRLA.reg =
         // Set prescaler to 1
         // TC_CTRLA_PRESCALER_DIV1 |
-        // // Set prescaler to 8, 48MHz/8 = 6MHz
+
+        // Set prescaler to 2
+        // 120MHz/2 = 60MHz
+        // TC_CTRLA_PRESCALER_DIV2 |
+
+        // Set prescaler to 8
+        // 48MHz/8 = 6MHz
         // TC_CTRLA_PRESCALER_DIV8 |
-        // Set prescaler to 16, 48MHz/16 = 3MHz
-        TC_CTRLA_PRESCALER_DIV16 |
+
+        // Set prescaler to 16
+        // 48MHz/16 = 3MHz
+        // TC_CTRLA_PRESCALER_DIV16 |
+
+        // Set prescaler to 64
+        // 48MHz/64 = 0.75MHz = 750kHz = 1,33us
+        // 120MHz/64 = 1.875MHz = 1875kHz = 0,53us
+        TC_CTRLA_PRESCALER_DIV64 |
+
         // Set the reset/reload to trigger on prescaler clock
         TC_CTRLA_PRESCSYNC_PRESC;
 
@@ -316,14 +333,32 @@ void setup_D9_1to40MHz() {
     // Wait for synchronization
     // while (TC3->COUNT8.SYNCBUSY.bit.WAVE)
 
-    // Set-up the PER (period) register 50Hz PWM
-    TC3->COUNT8.PER.reg = 200;
-    // Wait for synchronization
-    while (TC3->COUNT8.SYNCBUSY.bit.PER);
-
     // Set-up the CC (counter compare), channel 0 register
     // this sets the period
-    TC3->COUNT8.CC[0].reg = 10;
+    // 750 / (2 * (CC0 + 1))  = outputfrequence
+    // (750 / 2) / (CC0 + 1)  = outputfrequence
+    // (750 / 2) / (2 + 1)  = 125
+    // 750kHz / (2 * (255 + 1))  = 1,4648kHz
+    // tests
+    //       750.00kHz =   1,33us
+    //   0 = 375.00kHz =   2.67us
+    //   1 = 187.50kHz =   5.35us
+    //   2 = 125.00kHz =   8.02us
+    //   3 =  93.75kHz =  10.67us
+    //   4 =  74.90kHz =  13.40us
+    //   5 =  61.80kHz =  16.20us
+    //  10 =  33.60kHz =  29.80us
+    //  64 =   5.74kHz = 174.00us
+    // 128 =   2.89kHz = 346.00us
+    // 255 =   1.46kHz = 687.00us
+    //
+    // (clockfreq / 2) / (CC0 + 1)  = outfreq  | * (CC0 + 1)
+    // (clockfreq / 2) = outfreq * (CC0 + 1)   | / outfreq
+    // (clockfreq / 2) / outfreq  = CC0 + 1    | -1
+    // ((clockfreq / 2) / outfreq) -1  = CC0
+    // (750 / 2) / 93.75  = CC0 + 1
+    // ((750 / 2) / 93.75) - 1  = CC0
+    TC3->COUNT8.CC[0].reg = 2;
     // Wait for synchronization
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
 
@@ -336,14 +371,14 @@ void setup_D9_1to40MHz() {
 
 float gsclock_set_frequency(float frequency_Hz) {
     // TODO
-    if (frequency_Hz > frequency_Hz_min) {
-        // set_D9_period(period);
-    }
+    // if (frequency_Hz > frequency_Hz_min) {
+    //     // set_D9_period(period);
+    // }
     return frequency_Hz;
 }
 
 void set_D9_period(uint8_t period) {
-    TC3->COUNT8.CC[1].reg = period;
+    TC3->COUNT8.CC[0].reg = period;
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
 }
 
