@@ -1,27 +1,19 @@
 /******************************************************************************
 
-    TLC5957_dev.ino
-        minimal usage for slight_TLC5957 library.
+    slight_TLC5957_gsclock_test.ino
+        test of custom high speed clock output
+        for TLC5957 grayscale clock.
         debugout on usbserial interface: 115200baud
 
     hardware:
         Board:
-            Arduino compatible (with serial port)
+            Arduino with SAMD51
+            → tested with Adafruit ItsyBitsy M4
             LED on pin 13
-            TLC5957
-                lat_pin = 7
-                gclk_pin = 9
-                sclk_pin = SCK
-                sout_pin = MOSI
-                sin_pin = MISO
-
+            osciloscope on gclk_pin = 9
 
     libraries used:
         ~ slight_DebugMenu
-        ~ slight_TLC5957
-            written by stefan krueger (s-light),
-                github@s-light.eu, http://s-light.eu, https://github.com/s-light/
-            license: MIT
 
     written by stefan krueger (s-light),
         github@s-light.eu, http://s-light.eu, https://github.com/s-light/
@@ -61,9 +53,6 @@
 
 #include <slight_DebugMenu.h>
 
-#include <SPI.h>
-#include <slight_TLC5957.h>
-
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Info
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,8 +66,9 @@ void sketchinfo_print(Print &out) {
     out.println(F("|                      ( _ )                     |"));
     out.println(F("|                       \" \"                      |"));
     out.println(F("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"));
-    out.println(F("| TLC5957_dev.ino"));
-    out.println(F("|   minimal usage for slight_TLC5957 library"));
+    out.println(F("| slight_TLC5957_gsclock_test.ino"));
+    out.println(F("|   test high-speed clock output"));
+    out.println(F("|   for TLC5957 grayscale clock"));
     out.println(F("|"));
     out.println(F("| This Sketch has a debug-menu:"));
     out.println(F("| send '?'+Return for help"));
@@ -152,17 +142,7 @@ slight_DebugMenu myDebugMenu(Serial, Serial, 15);
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TLC5957
 
-// possible options and defaults:
-// slight_TLC5957(
-//     uint8_t chip_count,
-//     uint8_t lat_pin = 7,
-//     uint8_t gclk_pin = 9,
-//     uint8_t sclk_pin = SCK,
-//     uint8_t sout_pin = MOSI,
-//     uint8_t sin_pin = MISO
-// );
-// use default pins
-slight_TLC5957 tlc = slight_TLC5957(2);
+uint8_t gclk_pin = 9;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // functions
@@ -170,17 +150,6 @@ slight_TLC5957 tlc = slight_TLC5957(2);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // debug things
-
-// freeRam found at
-// http://forum.arduino.cc/index.php?topic=183790.msg1362282#msg1362282
-// posted by mrburnette
-int freeRam () {
-  // extern int __heap_start, *__brkval;
-  // int v;
-  // return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-}
-
-
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -208,11 +177,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("\t 'Y': toggle DebugOut livesign LED"));
             out.println(F("\t 'x': tests"));
             out.println();
-            // out.println();
-            // out.println(F("\t 'f': test fc 'f'"));
-            out.println(F("\t 'u': update 'u'"));
-            out.println(F("\t 'b': set buffer 'b'"));
-            out.println(F("\t 'g': pwm 'g'"));
+            out.println(F("\t 'f': set frequency in MHz 'f:1.0'"));
             out.println();
             out.println(F("____________________________________________________________"));
         } break;
@@ -256,67 +221,13 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
 
             out.println(F("__________"));
         } break;
-        //---------------------------------------------------------------------
-        // case 'w': {
-        //     // get state
-        //     out.println(F("test write."));
-        //     uint8_t value = atoi(&command[1]);
-        //     switch (value) {
-        //         case 0: {
-        //             out.println(F("write"));
-        //             tlc.write();
-        //         } break;
-        //         case 1: {
-        //             out.println(F("fc_WRTGS"));
-        //             tlc.generate_function_command(fc_WRTGS);
-        //         } break;
-        //         case 3: {
-        //             out.println(F("fc_LATGS"));
-        //             tlc.generate_function_command(fc_LATGS);
-        //         } break;
-        //         case 5: {
-        //             out.println(F("fc_WRTFC"));
-        //             tlc.generate_function_command(fc_WRTFC);
-        //         } break;
-        //         case 7: {
-        //             out.println(F("fc_LINERESET"));
-        //             tlc.generate_function_command(fc_LINERESET);
-        //         } break;
-        //         case 11: {
-        //             out.println(F("fc_READFC"));
-        //             tlc.generate_function_command(fc_READFC);
-        //         } break;
-        //         case 13: {
-        //             out.println(F("fc_TMGRST"));
-        //             tlc.generate_function_command(fc_TMGRST);
-        //         } break;
-        //         case 15: {
-        //             out.println(F("fc_FCWRTEN"));
-        //             tlc.generate_function_command(fc_FCWRTEN);
-        //         } break;
-        //     }
-        // } break;
-        case 'g': {
-            // get state
-            out.println(F("toggle GS-clock."));
-            analogWrite(9, 128);
-        } break;
-        case 'b': {
-            // get state
-            out.println(F("SetBuffer"));
-            for (size_t i = 0; i < tlc.led_per_chip_count; i++) {
-                tlc.buffer[(i*3) + 0] = 0x5555;
-                tlc.buffer[(i*3) + 1] = 0xAAAA;
-                tlc.buffer[(i*3) + 2] = 0xffff;
-            }
-
-            slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
-            out.println();
-        } break;
-        case 'u': {
-            // get state
-            out.println(F("update"));
-            tlc.update();
+        case 'f': {
+            // float value = atof(&command[1]);
+            // // convert from MHz to Hz
+            // value = value * 1000*1000;
+            // gsclock_set_frequency(value);
+            uint8_t value = atoi(&command[1]);
+            set_D9_period(value);
         } break;
         //---------------------------------------------------------------------
         default: {
@@ -336,12 +247,104 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TLC5957
 
-void tlc_init(Print &out) {
-    out.println(F("setup tlc:")); {
-
-        tlc.begin();
+void gsclock_init(Print &out) {
+    out.println(F("setup gsclock:")); {
+        setup_D9_1to40MHz();
     }
     out.println(F("\t finished."));
+}
+
+
+void setup_D9_1to40MHz() {
+
+    // Activate timer TC3
+    // CLK_TC3_APB
+    MCLK->APBBMASK.reg |= MCLK_APBBMASK_TC3;
+
+    // Set up the generic clock (GCLK7)
+    GCLK->GENCTRL[7].reg =
+        // Divide clock source by divisor 1
+        GCLK_GENCTRL_DIV(1) |
+        // Set the duty cycle to 50/50 HIGH/LOW
+        GCLK_GENCTRL_IDC |
+        // Enable GCLK7
+        GCLK_GENCTRL_GENEN |
+        // Select 48MHz DFLL clock source
+        GCLK_GENCTRL_SRC_DFLL;
+        // Select 100MHz DPLL clock source
+        //GCLK_GENCTRL_SRC_DPLL1;
+        // Select 120MHz DPLL clock source
+        // GCLK_GENCTRL_SRC_DPLL0;
+    // Wait for synchronization
+    while (GCLK->SYNCBUSY.bit.GENCTRL7);
+
+    // for PCHCTRL numbers have a look at Table 14-9. PCHCTRLm Mapping page168ff
+    // http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf#page=169&zoom=page-width,-8,696
+    GCLK->PCHCTRL[26].reg =
+        // Enable the TC3 peripheral channel
+        GCLK_PCHCTRL_CHEN |
+        // Connect generic clock 7 to TC3
+        GCLK_PCHCTRL_GEN_GCLK7;
+
+    // Enable the peripheral multiplexer on pin D9
+    PORT->Group[g_APinDescription[9].ulPort].
+        PINCFG[g_APinDescription[9].ulPin].bit.PMUXEN = 1;
+
+    // Set the D9 (PORT_PA19) peripheral multiplexer to
+    // peripheral (odd port number) E(6): TC3, Channel 1
+    // check if you need even or odd PMUX!!!
+    // http://forum.arduino.cc/index.php?topic=589655.msg4064311#msg4064311
+    PORT->Group[g_APinDescription[9].ulPort].
+        PMUX[g_APinDescription[9].ulPin >> 1].reg |= PORT_PMUX_PMUXO(4);
+
+    TC3->COUNT8.CTRLA.reg =
+        // Set prescaler to 1
+        // TC_CTRLA_PRESCALER_DIV1 |
+        // // Set prescaler to 8, 48MHz/8 = 6MHz
+        // TC_CTRLA_PRESCALER_DIV8 |
+        // Set prescaler to 16, 48MHz/16 = 3MHz
+        TC_CTRLA_PRESCALER_DIV16 |
+        // Set the reset/reload to trigger on prescaler clock
+        TC_CTRLA_PRESCSYNC_PRESC;
+
+    // Set-up TC3 timer for
+    // Match Frequency Generation (MFRQ)
+    // the period time (T) is controlled by the CC0 register.
+    // (instead of PER or MAX)
+    // WO[0] toggles on each Update condition.
+    TC3->COUNT8.WAVE.reg = TC_WAVE_WAVEGEN_MFRQ;
+    // Wait for synchronization
+    // while (TC3->COUNT8.SYNCBUSY.bit.WAVE)
+
+    // Set-up the PER (period) register 50Hz PWM
+    TC3->COUNT8.PER.reg = 200;
+    // Wait for synchronization
+    while (TC3->COUNT8.SYNCBUSY.bit.PER);
+
+    // Set-up the CC (counter compare), channel 0 register
+    // this sets the period
+    TC3->COUNT8.CC[0].reg = 10;
+    // Wait for synchronization
+    while (TC3->COUNT8.SYNCBUSY.bit.CC1);
+
+    // Enable timer TC3
+    TC3->COUNT8.CTRLA.bit.ENABLE = 1;
+    // Wait for synchronization
+    while (TC3->COUNT8.SYNCBUSY.bit.ENABLE);
+}
+
+
+float gsclock_set_frequency(float frequency_Hz) {
+    // TODO
+    if (frequency_Hz > frequency_Hz_min) {
+        // set_D9_period(period);
+    }
+    return frequency_Hz;
+}
+
+void set_D9_period(uint8_t period) {
+    TC3->COUNT8.CC[1].reg = period;
+    while (TC3->COUNT8.SYNCBUSY.bit.CC1);
 }
 
 
@@ -365,7 +368,7 @@ void setup() {
         // for ATmega32U4 devices:
         #if defined (__AVR_ATmega32U4__)
             // wait for arduino IDE to release all serial ports after upload.
-            delay(2000);
+            delay(1000);
         #endif
 
         Serial.begin(115200);
@@ -375,15 +378,12 @@ void setup() {
             // Wait for Serial Connection to be Opend from Host or
             // timeout after 6second
             uint32_t timeStamp_Start = millis();
-            while( (! Serial) && ( (millis() - timeStamp_Start) < 6000 ) ) {
+            while( (! Serial) && ( (millis() - timeStamp_Start) < 2000 ) ) {
                 // nothing to do
             }
         #endif
 
         Serial.println();
-
-        Serial.print(F("# Free RAM = "));
-        Serial.println(freeRam());
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // print welcome
@@ -393,10 +393,7 @@ void setup() {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // setup TLC5957
 
-        Serial.print(F("# Free RAM = "));
-        Serial.println(freeRam());
-
-        tlc_init(Serial);
+        gsclock_init(Serial);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // show serial commands
@@ -433,8 +430,7 @@ void loop() {
             if ( debugOut_LiveSign_Serial_Enabled ) {
                 Serial.print(millis());
                 Serial.print(F("ms;"));
-                Serial.print(F("  free RAM = "));
-                Serial.println(freeRam());
+                Serial.println();
             }
 
             if ( debugOut_LiveSign_LED_Enabled ) {
