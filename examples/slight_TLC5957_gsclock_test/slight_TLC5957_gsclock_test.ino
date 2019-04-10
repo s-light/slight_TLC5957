@@ -178,6 +178,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("\t 'x': tests"));
             out.println();
             out.println(F("\t 'f': set frequency in MHz 'f:1.0'"));
+            out.println(F("\t 'r': set period_reg 'r:255'"));
             out.println();
             out.println(F("____________________________________________________________"));
         } break;
@@ -223,14 +224,19 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
         } break;
         case 'f': {
             out.print(F("set frequency - new value:"));
-            // float value = atof(&command[1]);
-            // // convert from MHz to Hz
-            // value = value * 1000*1000;
-            // gsclock_set_frequency(value);
+            float value = atof(&command[1]);
+            out.print(value);
+            value = gsclock_set_frequency(value);
+            out.print(F(" → "));
+            out.print(value);
+            out.println();
+        } break;
+        case 'r': {
+            out.print(F("set period_reg - new value:"));
             uint8_t value = atoi(&command[1]);
             out.print(value);
             out.println();
-            set_D9_period(value);
+            set_D9_period_reg(value);
         } break;
         //---------------------------------------------------------------------
         default: {
@@ -252,13 +258,13 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
 
 void gsclock_init(Print &out) {
     out.println(F("setup gsclock:")); {
-        setup_D9_1to40MHz();
+        setup_D9_1MHz();
     }
     out.println(F("\t finished."));
 }
 
 
-void setup_D9_1to40MHz() {
+void setup_D9_1MHz() {
 
     // Activate timer TC3
     // CLK_TC3_APB
@@ -391,16 +397,28 @@ void setup_D9_1to40MHz() {
 }
 
 
-float gsclock_set_frequency(float frequency_Hz) {
-    // TODO
-    // if (frequency_Hz > frequency_Hz_min) {
-    //     // set_D9_period(period);
-    // }
-    return frequency_Hz;
+float gsclock_set_frequency(float frequency_MHz) {
+    const float frequency_MHz_min = 0.117 ;
+    const float frequency_MHz_max = 30.0;
+    float frequency_MHz_result = -1;
+    if (
+        (frequency_MHz > frequency_MHz_min) &&
+        (frequency_MHz < frequency_MHz_max)
+    ) {
+        // initialise to 1MHz
+        uint8_t period_reg = 29;
+        float req_raw = ((60 / 2) / frequency_MHz) -1;
+        period_reg = int(req_raw);
+        set_D9_period_reg(period_reg);
+        // calculate actual used frequency
+        frequency_MHz_result = (60 / 2) / (period_reg + 1);
+    }
+    return frequency_MHz_result;
 }
 
-void set_D9_period(uint8_t period) {
-    TC3->COUNT8.CC[0].reg = period;
+
+void set_D9_period_reg(uint8_t period_reg) {
+    TC3->COUNT8.CC[0].reg = period_reg;
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
 }
 

@@ -81,7 +81,7 @@ void slight_TLC5957::begin() {
     if (ready == false) {
         // setup
         pinMode(lat_pin, OUTPUT);
-        pinMode(gclk_pin, OUTPUT);
+        // pinMode(gclk_pin, OUTPUT);
         pinMode(sin_pin, INPUT);
         pinMode(sout_pin, OUTPUT);
         pinMode(sclk_pin, OUTPUT);

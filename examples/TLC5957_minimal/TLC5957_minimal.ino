@@ -7,10 +7,9 @@
 
     hardware:
         Board:
-            Arduino compatible (with serial port)
+            ItsyBitsy M4 (or compatible Port-Pin-Mapping)
             LED on pin 13
             TLC5957
-                TODO
 
 
     libraries used:
@@ -26,7 +25,7 @@
 /******************************************************************************
     The MIT License (MIT)
 
-    Copyright (c) 2018 Stefan Krüger
+    Copyright (c) 2019 Stefan Krüger
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
