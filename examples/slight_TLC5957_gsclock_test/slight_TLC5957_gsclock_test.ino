@@ -273,11 +273,11 @@ void setup_D9_1to40MHz() {
         // Enable GCLK7
         GCLK_GENCTRL_GENEN |
         // Select 48MHz DFLL clock source
-        GCLK_GENCTRL_SRC_DFLL;
+        // GCLK_GENCTRL_SRC_DFLL;
         // Select 100MHz DPLL clock source
         //GCLK_GENCTRL_SRC_DPLL1;
         // Select 120MHz DPLL clock source
-        // GCLK_GENCTRL_SRC_DPLL0;
+        GCLK_GENCTRL_SRC_DPLL0;
     // Wait for synchronization
     while (GCLK->SYNCBUSY.bit.GENCTRL7);
 
@@ -306,7 +306,7 @@ void setup_D9_1to40MHz() {
 
         // Set prescaler to 2
         // 120MHz/2 = 60MHz
-        // TC_CTRLA_PRESCALER_DIV2 |
+        TC_CTRLA_PRESCALER_DIV2 |
 
         // Set prescaler to 8
         // 48MHz/8 = 6MHz
@@ -319,7 +319,7 @@ void setup_D9_1to40MHz() {
         // Set prescaler to 64
         // 48MHz/64 = 0.75MHz = 750kHz = 1,33us
         // 120MHz/64 = 1.875MHz = 1875kHz = 0,53us
-        TC_CTRLA_PRESCALER_DIV64 |
+        // TC_CTRLA_PRESCALER_DIV64 |
 
         // Set the reset/reload to trigger on prescaler clock
         TC_CTRLA_PRESCSYNC_PRESC;
@@ -358,7 +358,29 @@ void setup_D9_1to40MHz() {
     // ((clockfreq / 2) / outfreq) -1  = CC0
     // (750 / 2) / 93.75  = CC0 + 1
     // ((750 / 2) / 93.75) - 1  = CC0
-    TC3->COUNT8.CC[0].reg = 2;
+    // --------------------------
+    // ((60 / 2) / 2) -1  = CC0
+    // (60MHz / 2) / (0 + 1)  = 30MHz
+    // (60MHz / 2) / (255 + 1)  = 0,117MHz = 117kHz
+    //
+    //       60.0MHz
+    //   0 = 30.0MHz
+    //   1 = 15.0MHz
+    //   2 = 10.0MHz
+    //   3 =  7.5MHz
+    //   4 =  6.0MHz
+    //   5 =  5.0MHz
+    //   9 =  3.0MHz
+    //  10 =  2.7MHz
+    //  14 =  2.0MHz
+    //  29 =  1.0MHz
+    //  59 =  0.5MHz = 500kHz
+    //  74 =  0.4MHz
+    //  99 =  0.3MHz
+    // 149 =  0.2MHz
+    // 255 =  0.11MHz
+    // start with 1MHz
+    TC3->COUNT8.CC[0].reg = 29;
     // Wait for synchronization
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
 
