@@ -51,20 +51,19 @@
 slight_TLC5957::slight_TLC5957(
     uint8_t chip_count,
     uint8_t lat_pinCC,
-    uint8_t gclk_pin,
+    // uint8_t gclk_pin,
     uint8_t sclk_pin,
     uint8_t sout_pin,
     uint8_t sin_pin
 ):
+    buffer_byte_count(chip_count*CHIP_BUFFER_BYTE_COUNT*PIXEL_PER_CHIP),
+    buffer(reinterpret_cast<uint16_t*>(calloc(buffer_byte_count, 1))),
     lat_pin(lat_pinCC),
-    gclk_pin(gclk_pin),
+    // gclk_pin(gclk_pin),
     sclk_pin(sclk_pin),
     sout_pin(sout_pin),
-    sin_pin(sin_pin),
-    buffer_byte_count(chip_count*chip_buffer_byte_count*led_per_chip_count),
-    buffer(
-        reinterpret_cast<uint16_t*>(calloc(buffer_byte_count, 1))
-) {
+    sin_pin(sin_pin)
+{
     ready = false;
 }
 
@@ -103,9 +102,9 @@ void slight_TLC5957::update() {
     // TODO(s-light): implement.
 
     uint16_t * buffer_start = buffer;
-    size_t write_inc = (chip_buffer_byte_count * chip_count) - 2;
+    size_t write_inc = (CHIP_BUFFER_BYTE_COUNT * chip_count) - 2;
 
-    for (size_t i = 0; i < led_per_chip_count; i++) {
+    for (uint8_t i = 0; i < PIXEL_PER_CHIP; i++) {
         SPI.beginTransaction(SPISettings(1 * 1000000, MSBFIRST, SPI_MODE0));
         // write GS data for all chips -1*16bit
         // SPI.transfer(buffer, write_inc);
@@ -115,10 +114,10 @@ void slight_TLC5957::update() {
         buffer_start += (write_inc / 2);
         SPI.endTransaction();
         // special
-        if (i == led_per_chip_count-1) {
-            write_SPI_with_function_command(fc_LATGS, *buffer_start);
+        if (i == (PIXEL_PER_CHIP - 1)) {
+            write_SPI_with_function_command(_FC__LATGS, *buffer_start);
         } else {
-            write_SPI_with_function_command(fc_WRTGS, *buffer_start);
+            write_SPI_with_function_command(_FC__WRTGS, *buffer_start);
         }
         buffer_start += 1;
     }
@@ -138,8 +137,8 @@ void slight_TLC5957::write_SPI_with_function_command(
     digitalWrite(sclk_pin, LOW);
     digitalWrite(lat_pin, LOW);
 
-    for (size_t i = 0; i < 16; i++) {
-        if (16-function_command == i) {
+    for (uint8_t i = 0; i < 16; i++) {
+        if ((16 - function_command) == i) {
             digitalWrite(lat_pin, HIGH);
         }
 

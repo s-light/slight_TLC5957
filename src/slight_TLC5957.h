@@ -59,7 +59,7 @@ public:
     slight_TLC5957(
         uint8_t chip_count,
         uint8_t lat_pin = 7,
-        uint8_t gclk_pin = 9,
+        // uint8_t gclk_pin = 9,
         uint8_t sclk_pin = SCK,
         uint8_t sout_pin = MOSI,
         uint8_t sin_pin = MISO
@@ -72,6 +72,7 @@ public:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // public types
 
+    // ##########################################
     // 3.10 Function Commands Summary (page 30)
     // http://www.ti.com/lit/ug/slvuaf0/slvuaf0.pdf#page=30&zoom=auto,-110,464
     // WRTGS
@@ -116,38 +117,147 @@ public:
     //     this must send before WRTFC
     //
     enum function_command_pulse_count {
-        fc_WRTGS = 1,
-        fc_LATGS = 3,
-        fc_WRTFC = 5,
-        fc_LINERESET = 7,
-        fc_READFC = 11,
-        fc_TMGRST = 13,
-        fc_FCWRTEN = 15
+        _FC__WRTGS = 1,
+        _FC__LATGS = 3,
+        _FC__WRTFC = 5,
+        _FC__LINERESET = 7,
+        _FC__READFC = 11,
+        _FC__TMGRST = 13,
+        _FC__FCWRTEN = 15
     };
 
+    // ##########################################
     // 3.3.3 Function Control (FC) Register
     // BIT     NAME            default     description
     // 0-1     LODVTH          01          LED Open Detection Voltage
     // 2-3     SEL_TD0         01          TD0 select. SOUT hold time.
     // 4       SEL_GDLY        1           Group Delay. 0 = No Delay
     // 5       XREFRESH        0           auto data refresh mode.
-    //                                     on LATGS/LINERESET → data copied from GS1 to GS2
+    //                                     on LATGS/LINERESET → data copied
+    //                                       from GS1 to GS2
     //                                     0 = enabled → GS-counter continues
-    //                                     1 = disabled → GS-counter reset; OUTx forced off
+    //                                     1 = disabled → GS-counter reset;
+    //                                       OUTx forced off
     // 6       SEL_GCK_EDGE    0           GCLK edge select.
-    //                                     0 = OUTx toggle only on rising edge of GLCK
-    //                                     1 = OUTx toggle on rising & falling edge of GLCK
+    //                                     0 = OUTx toggle only on
+    //                                       rising edge of GLCK
+    //                                     1 = OUTx toggle on
+    //                                       rising & falling edge of GLCK
     // 7       SEL_PCHG        0           Pre-charge working mode select
-    // 8       ESPWM           0           ESPWM mode enable bit. (0 = enabled, 1 = disabled)
-    // 9       LGSE3           0           Compensation for Blue LED. (0 = disabled, 1 = enabled)
-    // 10      SEL_SCK_EDGE    0           SCLK edge select (0 = only rising edge, 1 = both edges)
-    // 11-13   LGSE1           000         Low Gray Scale Enhancement for Red/Green/Blue color
-    // 14-22   CCB             100000000   Color brightness contro data Blue (000h-1FFh)
-    // 23-31   CCG             100000000   Color brightness contro data Blue (000h-1FFh)
-    // 32-40   CCR             100000000   Color brightness contro data Blue (000h-1FFh)
-    // 41-43   BC              100         Global brightness control data (0h-7h)
-    // 44      PokerTransMode  0           Poker trans mode enable bit. (0 = disabled, 1 = enabled)
+    // 8       ESPWM           0           ESPWM mode enable bit.
+    //                                       (0 = enabled, 1 = disabled)
+    // 9       LGSE3           0           Compensation for Blue LED.
+    //                                       (0 = disabled, 1 = enabled)
+    // 10      SEL_SCK_EDGE    0           SCLK edge select
+    //                                       (0 = rising edge, 1 = both edges)
+    // 11-13   LGSE1           000         Low Gray Scale Enhancement for
+    //                                       Red/Green/Blue color
+    // 14-22   CCB             100000000   Color brightness control data Blue
+    //                                       (000h-1FFh)
+    // 23-31   CCG             100000000   Color brightness control data Green
+    //                                       (000h-1FFh)
+    // 32-40   CCR             100000000   Color brightness control data Red
+    //                                       (000h-1FFh)
+    // 41-43   BC              100         Global brightness control data
+    //                                       (0h-7h)
+    // 44      PokerTransMode  0           Poker trans mode enable bit.
+    //                                       (0 = disabled, 1 = enabled)
     // 45-47   LGSE2           000         first line performance improvment
+    // TODO(s-light): add function control options
+
+    // _FC_BIT_COUNT = CHIP_BUFFER_BIT_COUNT
+    // _FC_FIELDS = {
+    //     "LODVTH": {
+    //         "offset": 0,
+    //         "length": 2,
+    //         "mask": 0b11,
+    //         "default": 0b01,
+    //     },
+    //     "SEL_TD0": {
+    //         "offset": 2,
+    //         "length": 2,
+    //         "mask": 0b11,
+    //         "default": 0b01,
+    //     },
+    //     "SEL_GDLY": {
+    //         "offset": 4,
+    //         "length": 1,
+    //         "mask": 0b1,
+    //         "default": 0b1,
+    //     },
+    //     "XREFRESH": {
+    //         "offset": 5,
+    //         "length": 1,
+    //         "mask": 0b1,
+    //         "default": 0b0,
+    //     },
+    //     "SEL_GCK_EDGE": {
+    //         "offset": 6,
+    //         "length": 1,
+    //         "mask": 0b1,
+    //         "default": 0b0,
+    //     },
+    //     "SEL_PCHG": {
+    //         "offset": 7,
+    //         "length": 1,
+    //         "mask": 0b1,
+    //         "default": 0b0,
+    //     },
+    //     "ESPWM": {
+    //         "offset": 8,
+    //         "length": 1,
+    //         "mask": 0b1,
+    //         "default": 0b0,
+    //     },
+    //     "LGSE3": {
+    //         "offset": 9,
+    //         "length": 1,
+    //         "mask": 0b1,
+    //         "default": 0b0,
+    //     },
+    //     "LGSE1": {
+    //         "offset": 11,
+    //         "length": 3,
+    //         "mask": 0b111,
+    //         "default": 0b000,
+    //     },
+    //     "CCB": {
+    //         "offset": 14,
+    //         "length": 9,
+    //         "mask": 0b111111111,
+    //         "default": 0b100000000,
+    //     },
+    //     "CCG": {
+    //         "offset": 23,
+    //         "length": 9,
+    //         "mask": 0b111111111,
+    //         "default": 0b100000000,
+    //     },
+    //     "CCR": {
+    //         "offset": 32,
+    //         "length": 9,
+    //         "mask": 0b111111111,
+    //         "default": 0b100000000,
+    //     },
+    //     "BC": {
+    //         "offset": 41,
+    //         "length": 3,
+    //         "mask": 0b111,
+    //         "default": 0b100,
+    //     },
+    //     "PokerTransMode": {
+    //         "offset": 44,
+    //         "length": 1,
+    //         "mask": 0b1,
+    //         "default": 0b0,
+    //     },
+    //     "LGSE2": {
+    //         "offset": 45,
+    //         "length": 3,
+    //         "mask": 0b111,
+    //         "default": 0b000,
+    //     },
+    // }
 
     // enum function_control_mask {
     //     //                      __444444443333333333222222222211111111110000000000
@@ -157,6 +267,43 @@ public:
     //     fc_mask_SEL_TD0 =       0b000000000000000000000000000000000000000000000000,
     //     fc_mask_SEL_SCK_EDGE =  0b000000000000000000000000000000000000000000000000,
     // };
+
+    struct function_control_t {
+      const uint8_t offset;
+      const uint8_t length;
+      const uint8_t mask;
+      const uint8_t default_value;
+    };
+
+    // static const function_control_t PokerTransMode = {
+    //     .offset = 44,
+    //     .length = 1,
+    //     .mask = 0b1,
+    //     .default = 0b0,
+    // };
+
+    // const struct _FC_FIELDS_t {
+    //   const function_control_t PokerTransMode = ;
+    //   const function_control_t LGSE2;
+    // } _FC_FIELDS;
+    //
+    // enum class
+    // enum class EyeColor : function_control_t {
+    //     PokerTransMode = {
+    //         .offset = 44,
+    //         .length = 1,
+    //         .mask = 0b1,
+    //         .default = 0b0,
+    //     },
+    //     LGSE2 = {
+    //         .offset = 45,
+    //         .length = 3,
+    //         .mask = 0b111,
+    //         .default = 0b000,
+    //     },
+    // };
+
+
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // public functions
@@ -168,11 +315,20 @@ public:
     void update();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // gloal helpers
+    // helper
 
-    const uint8_t led_per_chip_count = 16;
-    const uint8_t chip_buffer_bit_count = 48;
-    const uint8_t chip_buffer_byte_count = chip_buffer_bit_count / 8;
+    const uint8_t COLORS_PER_PIXEL = 3;
+    const uint8_t PIXEL_PER_CHIP = 16;
+    const uint8_t CHANNEL_PER_CHIP = COLORS_PER_PIXEL * PIXEL_PER_CHIP;
+
+    const uint8_t BUFFER_BYTES_PER_COLOR = 2;
+    const uint8_t BUFFER_BYTES_PER_PIXEL = BUFFER_BYTES_PER_COLOR * COLORS_PER_PIXEL;
+
+    const uint8_t CHIP_BUFFER_BIT_COUNT = 48;
+    const uint8_t CHIP_BUFFER_BYTE_COUNT = CHIP_BUFFER_BIT_COUNT / 8;
+    const uint8_t CHIP_GS_BUFFER_BYTE_COUNT = CHIP_BUFFER_BYTE_COUNT * PIXEL_PER_CHIP;
+    const uint8_t CHIP_FUNCTION_CMD_BIT_COUNT = 16;
+    const uint8_t CHIP_FUNCTION_CMD_BYTE_COUNT = CHIP_FUNCTION_CMD_BIT_COUNT / 8;
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // individual registers
@@ -189,7 +345,7 @@ public:
 
     const uint16_t buffer_byte_count;
     uint16_t *buffer;
-    
+
 private:
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -204,7 +360,7 @@ private:
     uint8_t chip_count;
 
     const uint8_t lat_pin;
-    const uint8_t gclk_pin;
+    // const uint8_t gclk_pin;
     const uint8_t sclk_pin;
     const uint8_t sout_pin;
     const uint8_t sin_pin;

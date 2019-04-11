@@ -219,15 +219,14 @@ void set_D9_period_reg(uint8_t period_reg) {
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
 }
 
+unsigned long animation_timestamp = 0;
+const uint16_t animation_interval = 1000; //ms
 
+uint8_t step = 0;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // functions
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// debug things
-
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TLC5957
@@ -238,6 +237,19 @@ void tlc_init(Print &out) {
         tlc.begin();
     }
     out.println(F("\t finished."));
+}
+
+
+void update_animation() {
+    if ((millis() - animation_timestamp) > animation_interval) {
+        animation_timestamp = millis();
+        // tlc.setPixel()
+        step += 1;
+        // if (step >= tlc.pixel_count) {
+        if (step >= 10) {
+            step = 0;
+        }
+    }
 }
 
 
@@ -272,6 +284,7 @@ void loop() {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // TLC5957
 
+    update_animation();
 
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
