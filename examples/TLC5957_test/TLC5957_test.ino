@@ -310,9 +310,9 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // get state
             out.println(F("SetBuffer"));
             for (size_t i = 0; i < tlc.led_per_chip_count; i++) {
-                tlc.buffer[(i*3) + 0] = 0x5555;
-                tlc.buffer[(i*3) + 1] = 0xAAAA;
-                tlc.buffer[(i*3) + 2] = 0xffff;
+                tlc.buffer[(i*3) + 0] = 0x0055;
+                tlc.buffer[(i*3) + 1] = 0x00AA;
+                tlc.buffer[(i*3) + 2] = 0x00ff;
             }
 
             slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);

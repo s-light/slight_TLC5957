@@ -97,12 +97,6 @@ void sketchinfo_print(Print &out) {
 }
 
 
-// Serial.print to Flash: Notepad++ Replace RegEx
-//     Find what:        Serial.print(.*)\("(.*)"\);
-//     Replace with:    Serial.print\1\(F\("\2"\)\);
-
-
-
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // definitions (global)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -135,36 +129,6 @@ boolean debugOut_LiveSign_LED_Enabled = 1;
 // );
 // use default pins
 slight_TLC5957 tlc = slight_TLC5957(2);
-
-
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// functions
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// debug things
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// TLC5957
-
-void tlc_init(Print &out) {
-    out.println(F("setup tlc:")); {
-
-        tlc.begin();
-    }
-    out.println(F("\t finished."));
-}
-
-
-void gsclock_init(Print &out) {
-    out.println(F("setup gsclock:")); {
-        setup_D9_1MHz();
-    }
-    out.println(F("\t finished."));
-}
 
 
 void setup_D9_1MHz() {
@@ -238,17 +202,7 @@ void setup_D9_1MHz() {
     //   0 = 30.0MHz
     //   1 = 15.0MHz
     //   2 = 10.0MHz
-    //   3 =  7.5MHz
-    //   4 =  6.0MHz
-    //   5 =  5.0MHz
-    //   9 =  3.0MHz
-    //  14 =  2.0MHz
     //  29 =  1.0MHz
-    //  59 =  0.5MHz
-    //  74 =  0.4MHz
-    //  99 =  0.3MHz
-    // 149 =  0.2MHz
-    // 255 =  0.11MHz
     // start with 1MHz
     TC3->COUNT8.CC[0].reg = 29;
     // Wait for synchronization
@@ -260,27 +214,6 @@ void setup_D9_1MHz() {
     while (TC3->COUNT8.SYNCBUSY.bit.ENABLE);
 }
 
-
-float gsclock_set_frequency(float frequency_MHz) {
-    const float frequency_MHz_min = 0.117 ;
-    const float frequency_MHz_max = 30.0;
-    float frequency_MHz_result = -1;
-    if (
-        (frequency_MHz > frequency_MHz_min) &&
-        (frequency_MHz < frequency_MHz_max)
-    ) {
-        // initialise to 1MHz
-        uint8_t period_reg = 29;
-        float req_raw = ((60 / 2) / frequency_MHz) -1;
-        period_reg = int(req_raw);
-        set_D9_period_reg(period_reg);
-        // calculate actual used frequency
-        frequency_MHz_result = (60 / 2) / (period_reg + 1);
-    }
-    return frequency_MHz_result;
-}
-
-
 void set_D9_period_reg(uint8_t period_reg) {
     TC3->COUNT8.CC[0].reg = period_reg;
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
@@ -289,83 +222,85 @@ void set_D9_period_reg(uint8_t period_reg) {
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// setup
+// functions
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// debug things
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// TLC5957
+
+void tlc_init(Print &out) {
+    out.println(F("setup tlc:")); {
+        setup_D9_1MHz();
+        tlc.begin();
+    }
+    out.println(F("\t finished."));
+}
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// main
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 void setup() {
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // initialise PINs
+    pinMode(infoled_pin, OUTPUT);
+    digitalWrite(infoled_pin, HIGH);
 
-        //LiveSign
-        pinMode(infoled_pin, OUTPUT);
-        digitalWrite(infoled_pin, HIGH);
-
-        // as of arduino 1.0.1 you can use INPUT_PULLUP
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // wait for arduino IDE to release all serial ports after upload.
+    delay(500);
     // initialise serial
+    Serial.begin(115200);
+    Serial.println();
 
-        // wait for arduino IDE to release all serial ports after upload.
-        delay(500);
-
-        Serial.begin(115200);
-        Serial.println();
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // print welcome
-        sketchinfo_print(Serial);
+    sketchinfo_print(Serial);
 
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // setup TLC5957
-        tlc_init(Serial);
-        gsclock_init(Serial);
+    tlc_init(Serial);
 
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // go
+    Serial.println(F("wait 0.5s."));
+    delay(500);
+    Serial.println(F("Loop:"));
+}
 
-        Serial.println(F("wait 1s."));
-        delay(1000);
-        Serial.println(F("Loop:"));
-
-} /** setup **/
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// main loop
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void loop() {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // TLC5957
 
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // debug output
+
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // debug output
+    if (
+        (millis() - debugOut_LiveSign_TimeStamp_LastAction) >
+        debugOut_LiveSign_UpdateInterval
+    ) {
+        debugOut_LiveSign_TimeStamp_LastAction = millis();
 
-        if (
-            (millis() - debugOut_LiveSign_TimeStamp_LastAction) >
-            debugOut_LiveSign_UpdateInterval
-        ) {
-            debugOut_LiveSign_TimeStamp_LastAction = millis();
-
-            if ( debugOut_LiveSign_Serial_Enabled ) {
-                Serial.print(millis());
-                Serial.print(F("ms;"));
-            }
-
-            if ( debugOut_LiveSign_LED_Enabled ) {
-                infoled_state = ! infoled_state;
-                if (infoled_state) {
-                    //set LED to HIGH
-                    digitalWrite(infoled_pin, HIGH);
-                } else {
-                    //set LED to LOW
-                    digitalWrite(infoled_pin, LOW);
-                }
-            }
-
+        if ( debugOut_LiveSign_Serial_Enabled ) {
+            Serial.print(millis());
+            Serial.print(F("ms;"));
         }
 
-} /** loop **/
+        if ( debugOut_LiveSign_LED_Enabled ) {
+            infoled_state = ! infoled_state;
+            if (infoled_state) {
+                //set LED to HIGH
+                digitalWrite(infoled_pin, HIGH);
+            } else {
+                //set LED to LOW
+                digitalWrite(infoled_pin, LOW);
+            }
+        }
+
+    }
+
+}
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // THE END
