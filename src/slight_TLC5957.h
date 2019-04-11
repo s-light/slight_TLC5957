@@ -163,101 +163,8 @@ public:
     // 44      PokerTransMode  0           Poker trans mode enable bit.
     //                                       (0 = disabled, 1 = enabled)
     // 45-47   LGSE2           000         first line performance improvment
-    // TODO(s-light): add function control options
 
-    // _FC_BIT_COUNT = CHIP_BUFFER_BIT_COUNT
-    // _FC_FIELDS = {
-    //     "LODVTH": {
-    //         "offset": 0,
-    //         "length": 2,
-    //         "mask": 0b11,
-    //         "default": 0b01,
-    //     },
-    //     "SEL_TD0": {
-    //         "offset": 2,
-    //         "length": 2,
-    //         "mask": 0b11,
-    //         "default": 0b01,
-    //     },
-    //     "SEL_GDLY": {
-    //         "offset": 4,
-    //         "length": 1,
-    //         "mask": 0b1,
-    //         "default": 0b1,
-    //     },
-    //     "XREFRESH": {
-    //         "offset": 5,
-    //         "length": 1,
-    //         "mask": 0b1,
-    //         "default": 0b0,
-    //     },
-    //     "SEL_GCK_EDGE": {
-    //         "offset": 6,
-    //         "length": 1,
-    //         "mask": 0b1,
-    //         "default": 0b0,
-    //     },
-    //     "SEL_PCHG": {
-    //         "offset": 7,
-    //         "length": 1,
-    //         "mask": 0b1,
-    //         "default": 0b0,
-    //     },
-    //     "ESPWM": {
-    //         "offset": 8,
-    //         "length": 1,
-    //         "mask": 0b1,
-    //         "default": 0b0,
-    //     },
-    //     "LGSE3": {
-    //         "offset": 9,
-    //         "length": 1,
-    //         "mask": 0b1,
-    //         "default": 0b0,
-    //     },
-    //     "LGSE1": {
-    //         "offset": 11,
-    //         "length": 3,
-    //         "mask": 0b111,
-    //         "default": 0b000,
-    //     },
-    //     "CCB": {
-    //         "offset": 14,
-    //         "length": 9,
-    //         "mask": 0b111111111,
-    //         "default": 0b100000000,
-    //     },
-    //     "CCG": {
-    //         "offset": 23,
-    //         "length": 9,
-    //         "mask": 0b111111111,
-    //         "default": 0b100000000,
-    //     },
-    //     "CCR": {
-    //         "offset": 32,
-    //         "length": 9,
-    //         "mask": 0b111111111,
-    //         "default": 0b100000000,
-    //     },
-    //     "BC": {
-    //         "offset": 41,
-    //         "length": 3,
-    //         "mask": 0b111,
-    //         "default": 0b100,
-    //     },
-    //     "PokerTransMode": {
-    //         "offset": 44,
-    //         "length": 1,
-    //         "mask": 0b1,
-    //         "default": 0b0,
-    //     },
-    //     "LGSE2": {
-    //         "offset": 45,
-    //         "length": 3,
-    //         "mask": 0b111,
-    //         "default": 0b000,
-    //     },
-    // }
+    const uint8_t _FC_BIT_COUNT = CHIP_BUFFER_BIT_COUNT;
 
     struct function_control_t {
       const uint8_t offset;
@@ -265,13 +172,6 @@ public:
       const uint16_t mask;
       const uint16_t defaultv;
     };
-
-    // static constexpr function_control_t PokerTransMode = {
-    //     .offset = 44,
-    //     .length = 1,
-    //     .mask = 0b1,
-    //     .defaultv = 0b0,
-    // };
 
     static const struct _FC_FIELDS_t {
         const function_control_t LODVTH = {
