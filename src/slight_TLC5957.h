@@ -259,49 +259,112 @@ public:
     //     },
     // }
 
-    // enum function_control_mask {
-    //     //                      __444444443333333333222222222211111111110000000000
-    //     //                      __765432109876543210987654321098765432109876543210
-    //     // fc_mask_XXX =        0b000000000000000000000000000000000000000000000000,
-    //     fc_mask_LODVTH =        0b000000000000000000000000000000000000000000000000,
-    //     fc_mask_SEL_TD0 =       0b000000000000000000000000000000000000000000000000,
-    //     fc_mask_SEL_SCK_EDGE =  0b000000000000000000000000000000000000000000000000,
-    // };
-
     struct function_control_t {
       const uint8_t offset;
       const uint8_t length;
-      const uint8_t mask;
-      const uint8_t defaultv;
+      const uint16_t mask;
+      const uint16_t defaultv;
     };
 
-    static constexpr function_control_t PokerTransMode = {
-        .offset = 44,
-        .length = 1,
-        .mask = 0b1,
-        .defaultv = 0b0,
-    };
-
-    // const struct _FC_FIELDS_t {
-    //   const function_control_t PokerTransMode = ;
-    //   const function_control_t LGSE2;
-    // } _FC_FIELDS;
-    //
-    // enum class
-    // enum class EyeColor : function_control_t {
-    //     PokerTransMode = {
-    //         .offset = 44,
-    //         .length = 1,
-    //         .mask = 0b1,
-    //         .default = 0b0,
-    //     },
-    //     LGSE2 = {
-    //         .offset = 45,
-    //         .length = 3,
-    //         .mask = 0b111,
-    //         .default = 0b000,
-    //     },
+    // static constexpr function_control_t PokerTransMode = {
+    //     .offset = 44,
+    //     .length = 1,
+    //     .mask = 0b1,
+    //     .defaultv = 0b0,
     // };
+
+    static const struct _FC_FIELDS_t {
+        const function_control_t LODVTH = {
+            .offset = 0,
+            .length = 2,
+            .mask = 0b11,
+            .defaultv = 0b01,
+        };
+        const function_control_t SEL_TD0 = {
+            .offset = 2,
+            .length = 2,
+            .mask = 0b11,
+            .defaultv = 0b01,
+        };
+        const function_control_t SEL_GDLY = {
+            .offset = 4,
+            .length = 1,
+            .mask = 0b1,
+            .defaultv = 0b1,
+        };
+        const function_control_t XREFRESH = {
+            .offset = 5,
+            .length = 1,
+            .mask = 0b1,
+            .defaultv = 0b0,
+        };
+        const function_control_t SEL_GCK_EDGE = {
+            .offset = 6,
+            .length = 1,
+            .mask = 0b1,
+            .defaultv = 0b0,
+        };
+        const function_control_t SEL_PCHG = {
+            .offset = 7,
+            .length = 1,
+            .mask = 0b1,
+            .defaultv = 0b0,
+        };
+        const function_control_t ESPWM = {
+            .offset = 8,
+            .length = 1,
+            .mask = 0b1,
+            .defaultv = 0b0,
+        };
+        const function_control_t LGSE3 = {
+            .offset = 9,
+            .length = 1,
+            .mask = 0b1,
+            .defaultv = 0b0,
+        };
+        const function_control_t LGSE1 = {
+            .offset = 11,
+            .length = 3,
+            .mask = 0b111,
+            .defaultv = 0b000,
+        };
+        const function_control_t CCB = {
+            .offset = 14,
+            .length = 9,
+            .mask = 0b111111111,
+            .defaultv = 0b100000000,
+        };
+        const function_control_t CCG = {
+            .offset = 23,
+            .length = 9,
+            .mask = 0b111111111,
+            .defaultv = 0b100000000,
+        };
+        const function_control_t CCR = {
+            .offset = 32,
+            .length = 9,
+            .mask = 0b111111111,
+            .defaultv = 0b100000000,
+        };
+        const function_control_t BC = {
+            .offset = 41,
+            .length = 3,
+            .mask = 0b111,
+            .defaultv = 0b100,
+        };
+        const function_control_t PokerTransMode = {
+            .offset = 44,
+            .length = 1,
+            .mask = 0b1,
+            .defaultv = 0b0,
+        };
+        const function_control_t LGSE2 = {
+            .offset = 45,
+            .length = 3,
+            .mask = 0b111,
+            .defaultv = 0b000,
+        };
+    } _FC_FIELDS;
 
 
 
