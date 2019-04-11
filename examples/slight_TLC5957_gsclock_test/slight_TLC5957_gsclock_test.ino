@@ -400,19 +400,20 @@ void setup_D9_1MHz() {
 float gsclock_set_frequency(float frequency_MHz) {
     const float frequency_MHz_min = 0.117 ;
     const float frequency_MHz_max = 30.0;
-    float frequency_MHz_result = -1;
-    if (
-        (frequency_MHz > frequency_MHz_min) &&
-        (frequency_MHz < frequency_MHz_max)
-    ) {
-        // initialise to 1MHz
-        uint8_t period_reg = 29;
-        float req_raw = ((60 / 2) / frequency_MHz) -1;
-        period_reg = int(req_raw);
-        set_D9_period_reg(period_reg);
-        // calculate actual used frequency
-        frequency_MHz_result = (60 / 2) / (period_reg + 1);
+    if (frequency_MHz < frequency_MHz_min) {
+        frequency_MHz = frequency_MHz_min;
     }
+    if (frequency_MHz > frequency_MHz_max) {
+        frequency_MHz = frequency_MHz_max;
+    }
+    float frequency_MHz_result = -1;
+    // initialise to 1MHz
+    uint8_t period_reg = 29;
+    float req_raw = ((60 / 2) / frequency_MHz) -1;
+    period_reg = int(req_raw);
+    set_D9_period_reg(period_reg);
+    // calculate actual used frequency
+    frequency_MHz_result = (60.0 / 2) / (period_reg + 1);
     return frequency_MHz_result;
 }
 
