@@ -49,20 +49,22 @@
 
 
 slight_TLC5957::slight_TLC5957(
-    uint8_t chip_count,
-    uint8_t lat_pinCC,
-    // uint8_t gclk_pin,
-    uint8_t sclk_pin,
-    uint8_t sout_pin,
-    uint8_t sin_pin
+    uint16_t pixel_count,
+    uint8_t latch,
+    uint8_t gsclk,
+    uint8_t spi_clock,
+    uint8_t spi_mosi,
+    uint8_t spi_miso
 ):
+    pixel_count(pixel_count),
+    chip_count(pixel_count),
     buffer_byte_count(chip_count*CHIP_BUFFER_BYTE_COUNT*PIXEL_PER_CHIP),
     buffer(reinterpret_cast<uint16_t*>(calloc(buffer_byte_count, 1))),
-    lat_pin(lat_pinCC),
-    // gclk_pin(gclk_pin),
-    sclk_pin(sclk_pin),
-    sout_pin(sout_pin),
-    sin_pin(sin_pin
+    latch(latch),
+    gsclk(gsclk),
+    spi_clock(spi_clock),
+    spi_mosi(spi_mosi),
+    spi_miso(spi_miso
 ) {
     ready = false;
 }
@@ -79,11 +81,11 @@ void slight_TLC5957::begin() {
     // start up...
     if (ready == false) {
         // setup
-        pinMode(lat_pin, OUTPUT);
-        // pinMode(gclk_pin, OUTPUT);
-        pinMode(sin_pin, INPUT);
-        pinMode(sout_pin, OUTPUT);
-        pinMode(sclk_pin, OUTPUT);
+        pinMode(latch, OUTPUT);
+        // pinMode(gsclk, OUTPUT);
+        pinMode(spi_miso, INPUT);
+        pinMode(spi_mosi, OUTPUT);
+        pinMode(spi_clock, OUTPUT);
         SPI.begin();
         // SPI.beginTransaction(SPISettings(10 * 1000000, MSBFIRST, SPI_MODE0));
         SPI.beginTransaction(SPISettings(1 * 1000000, MSBFIRST, SPI_MODE0));
@@ -131,30 +133,30 @@ void slight_TLC5957::write_SPI_with_function_command(
     // faster speeds with direct port access...
     // https://forum.arduino.cc/index.php?topic=4324.0
 
-    pinMode(sout_pin, OUTPUT);
-    pinMode(sclk_pin, OUTPUT);
+    pinMode(spi_mosi, OUTPUT);
+    pinMode(spi_clock, OUTPUT);
 
-    digitalWrite(sclk_pin, LOW);
-    digitalWrite(lat_pin, LOW);
+    digitalWrite(spi_clock, LOW);
+    digitalWrite(latch, LOW);
 
     for (uint8_t i = 0; i < 16; i++) {
         if ((16 - function_command) == i) {
-            digitalWrite(lat_pin, HIGH);
+            digitalWrite(latch, HIGH);
         }
 
         // b1000000000000000
         if (value & 0x8000u) {
-            digitalWrite(sout_pin, HIGH);
+            digitalWrite(spi_mosi, HIGH);
         } else {
-            digitalWrite(sout_pin, LOW);
+            digitalWrite(spi_mosi, LOW);
         }
         value <<= 1;
 
-        digitalWrite(sclk_pin, HIGH);
+        digitalWrite(spi_clock, HIGH);
         delayMicroseconds(10);
-        digitalWrite(sclk_pin, LOW);
+        digitalWrite(spi_clock, LOW);
     }
 
-    digitalWrite(lat_pin, LOW);
+    digitalWrite(latch, LOW);
     // TODO(s-light): check if this works.
 }

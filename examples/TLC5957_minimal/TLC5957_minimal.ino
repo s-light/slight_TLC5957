@@ -118,17 +118,17 @@ boolean debugOut_LiveSign_LED_Enabled = 1;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TLC5957
 
-// possible options and defaults:
+// possible options and there defaults:
 // slight_TLC5957(
-//     uint8_t chip_count,
-//     uint8_t lat_pin = 7,
-//     uint8_t gclk_pin = 9,
-//     uint8_t sclk_pin = SCK,
-//     uint8_t sout_pin = MOSI,
-//     uint8_t sin_pin = MISO
+//     uint8_t chip_count = 16,
+//     uint8_t latch = 7,
+//     uint8_t gsclk = 9,
+//     uint8_t spi_clock = SCK,
+//     uint8_t spi_mosi = MOSI,
+//     uint8_t spi_miso = MISO
 // );
 // use default pins
-slight_TLC5957 tlc = slight_TLC5957(2);
+slight_TLC5957 tlc = slight_TLC5957(2*16);
 
 
 void setup_D9_1MHz() {
@@ -245,9 +245,11 @@ void update_animation() {
         animation_timestamp = millis();
         // tlc.setPixel()
         step += 1;
-        // if (step >= tlc.pixel_count) {
-        if (step >= 10) {
+        Serial.print("step:");
+        Serial.println(step);
+        if (step >= tlc.pixel_count) {
             step = 0;
+            Serial.println("step wrap around.");
         }
     }
 }

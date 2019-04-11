@@ -57,12 +57,12 @@ public:
     // constructor
 
     slight_TLC5957(
-        uint8_t chip_count,
-        uint8_t lat_pin = 7,
-        // uint8_t gclk_pin = 9,
-        uint8_t sclk_pin = SCK,
-        uint8_t sout_pin = MOSI,
-        uint8_t sin_pin = MISO
+        uint16_t pixel_count = 16,
+        uint8_t latch = 7,
+        uint8_t gsclk = 9,
+        uint8_t spi_clock = SCK,
+        uint8_t spi_mosi = MOSI,
+        uint8_t spi_miso = MISO
     );
     ~slight_TLC5957();
 
@@ -305,6 +305,8 @@ public:
         uint16_t value
     );
 
+    const uint8_t pixel_count;
+    const uint8_t chip_count;
 
     const uint16_t buffer_byte_count;
     uint16_t *buffer;
@@ -320,13 +322,11 @@ private:
     // attributes
     bool ready;
 
-    uint8_t chip_count;
-
-    const uint8_t lat_pin;
-    // const uint8_t gclk_pin;
-    const uint8_t sclk_pin;
-    const uint8_t sout_pin;
-    const uint8_t sin_pin;
+    const uint8_t latch;
+    const uint8_t gsclk;
+    const uint8_t spi_clock;
+    const uint8_t spi_mosi;
+    const uint8_t spi_miso;
 
 
 
