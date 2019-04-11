@@ -52,22 +52,30 @@ public:
     // Build a High-Density, High-Refresh Rate, Multiplexing Panel With the TLC5957
     // http://www.ti.com/lit/ug/slvuaf0/slvuaf0.pdf
 
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // constructor
-
-    slight_TLC5957(
-        uint16_t pixel_count = 16,
-        uint8_t latch = 7,
-        uint8_t gsclk = 9,
-        uint8_t spi_clock = SCK,
-        uint8_t spi_mosi = MOSI,
-        uint8_t spi_miso = MISO
-    );
-    ~slight_TLC5957();
-
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // helper
+
+    const uint8_t COLORS_PER_PIXEL = 3;
+    const uint8_t PIXEL_PER_CHIP = 16;
+    const uint8_t CHANNEL_PER_CHIP = COLORS_PER_PIXEL * PIXEL_PER_CHIP;
+
+    const uint8_t BUFFER_BYTES_PER_COLOR = 2;
+    const uint8_t BUFFER_BYTES_PER_PIXEL = BUFFER_BYTES_PER_COLOR * COLORS_PER_PIXEL;
+
+    const uint8_t CHIP_BUFFER_BIT_COUNT = 48;
+    const uint8_t CHIP_BUFFER_BYTE_COUNT = CHIP_BUFFER_BIT_COUNT / 8;
+    const uint8_t CHIP_GS_BUFFER_BYTE_COUNT = CHIP_BUFFER_BYTE_COUNT * PIXEL_PER_CHIP;
+    const uint8_t CHIP_FUNCTION_CMD_BIT_COUNT = 16;
+    const uint8_t CHIP_FUNCTION_CMD_BYTE_COUNT = CHIP_FUNCTION_CMD_BIT_COUNT / 8;
+
+    static uint16_t set_bit_with_mask(
+        uint16_t value, uint16_t mask, uint16_t value_new);
+
+    static uint16_t set_bit(
+        uint16_t value, uint8_t index, uint16_t value_new);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // public types
@@ -267,6 +275,18 @@ public:
     } _FC_FIELDS;
 
 
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // constructor
+
+    slight_TLC5957(
+        uint16_t pixel_count = 16,
+        uint8_t latch = 7,
+        uint8_t gsclk = 9,
+        uint8_t spi_clock = SCK,
+        uint8_t spi_mosi = MOSI,
+        uint8_t spi_miso = MISO
+    );
+    ~slight_TLC5957();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // public functions
@@ -275,41 +295,30 @@ public:
     // basic library api
     void begin();
     void end();
-    void update();
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // helper
-
-    const uint8_t COLORS_PER_PIXEL = 3;
-    const uint8_t PIXEL_PER_CHIP = 16;
-    const uint8_t CHANNEL_PER_CHIP = COLORS_PER_PIXEL * PIXEL_PER_CHIP;
-
-    const uint8_t BUFFER_BYTES_PER_COLOR = 2;
-    const uint8_t BUFFER_BYTES_PER_PIXEL = BUFFER_BYTES_PER_COLOR * COLORS_PER_PIXEL;
-
-    const uint8_t CHIP_BUFFER_BIT_COUNT = 48;
-    const uint8_t CHIP_BUFFER_BYTE_COUNT = CHIP_BUFFER_BIT_COUNT / 8;
-    const uint8_t CHIP_GS_BUFFER_BYTE_COUNT = CHIP_BUFFER_BYTE_COUNT * PIXEL_PER_CHIP;
-    const uint8_t CHIP_FUNCTION_CMD_BIT_COUNT = 16;
-    const uint8_t CHIP_FUNCTION_CMD_BYTE_COUNT = CHIP_FUNCTION_CMD_BIT_COUNT / 8;
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // individual registers
+    void show();
+    void update_fc();
 
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // configurations
 
-    void write_SPI_with_function_command(
-        function_command_pulse_count function_command,
-        uint16_t value
-    );
-
-    const uint8_t pixel_count;
+    const uint16_t pixel_count;
+    const uint16_t channel_count;
     const uint8_t chip_count;
 
     const uint16_t buffer_byte_count;
     uint16_t *buffer;
+    const uint16_t buffer_fc_byte_count;
+    uint16_t *buffer_fc;
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // temp things
+
+    void write_SPI_with_function_command(
+        function_command_pulse_count function_command,
+        uint16_t value
+    );
+    void update_old();
 
 private:
 
@@ -317,6 +326,11 @@ private:
     // private functions
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    void _init_buffer_fc();
+
+    void _write_buffer_GS();
+    void _write_buffer_FC();
+    void _write_buffer_with_function_command();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes

@@ -40,8 +40,42 @@
 #include "slight_TLC5957.h"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// definitions
+// helper
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+uint16_t slight_TLC5957::set_bit_with_mask(
+    uint16_t value, uint16_t mask, uint16_t value_new
+) {
+    // """Set bit with help of mask."""
+    // clear
+    value &= ~mask;
+    if (value_new) {
+        // set
+        value |= mask;
+    }
+    return value;
+}
+
+uint16_t slight_TLC5957::set_bit(
+    uint16_t value, uint8_t index, uint16_t value_new
+) {
+    // """Set bit - return new value.
+    //
+    // Set the index:th bit of value to 1 if value_new is truthy,
+    // else to 0, and return the new value.
+    // https://stackoverflow.com/a/12174051/574981
+    // """
+    // Compute mask, an integer with just bit 'index' set.
+    uint16_t mask = 1 << index;
+    // Clear the bit indicated by the mask (if x is False)
+    value &= ~mask;
+    if (value_new) {
+        // If x was True, set the bit indicated by the mask.
+        value |= mask;
+    }
+    // Return the result, we're done.
+    return value;
+}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // functions
@@ -57,9 +91,15 @@ slight_TLC5957::slight_TLC5957(
     uint8_t spi_miso
 ):
     pixel_count(pixel_count),
-    chip_count(pixel_count),
-    buffer_byte_count(chip_count*CHIP_BUFFER_BYTE_COUNT*PIXEL_PER_CHIP),
+    channel_count(pixel_count * COLORS_PER_PIXEL),
+    chip_count(
+        (pixel_count / PIXEL_PER_CHIP) +
+        // check if we pixels for a part of an chip
+        ((pixel_count % PIXEL_PER_CHIP) > 0 ? 1 : 0)),
+    buffer_byte_count(chip_count * CHIP_GS_BUFFER_BYTE_COUNT),
     buffer(reinterpret_cast<uint16_t*>(calloc(buffer_byte_count, 1))),
+    buffer_fc_byte_count(chip_count * CHIP_BUFFER_BYTE_COUNT),
+    buffer_fc(reinterpret_cast<uint16_t*>(calloc(buffer_fc_byte_count, 1))),
     latch(latch),
     gsclk(gsclk),
     spi_clock(spi_clock),
@@ -72,6 +112,7 @@ slight_TLC5957::slight_TLC5957(
 slight_TLC5957::~slight_TLC5957() {
     end();
     free(buffer);
+    free(buffer_fc);
 }
 
 
@@ -89,6 +130,13 @@ void slight_TLC5957::begin() {
         SPI.begin();
         // SPI.beginTransaction(SPISettings(10 * 1000000, MSBFIRST, SPI_MODE0));
         SPI.beginTransaction(SPISettings(1 * 1000000, MSBFIRST, SPI_MODE0));
+
+        _init_buffer_fc();
+        update_fc();
+
+        // write initial 0 values
+        show();
+        show();
     }
 }
 
@@ -99,8 +147,52 @@ void slight_TLC5957::end() {
     }
 }
 
+void slight_TLC5957::show() {
+    // """Write out Grayscale Values to chips."""
+    _write_buffer_GS();
+}
 
-void slight_TLC5957::update() {
+void slight_TLC5957::update_fc() {
+    // """Write out Function_Command Values to chips."""
+    _write_buffer_FC();
+}
+
+
+
+
+
+void slight_TLC5957::_init_buffer_fc() {
+    // TODO(s-light): implement
+}
+
+void slight_TLC5957::_write_buffer_GS() {
+    // TODO(s-light): implement
+}
+void slight_TLC5957::_write_buffer_FC() {
+    // TODO(s-light): implement
+}
+void slight_TLC5957::_write_buffer_with_function_command() {
+    // TODO(s-light): implement
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void slight_TLC5957::update_old() {
     // TODO(s-light): implement.
 
     uint16_t * buffer_start = buffer;
@@ -123,7 +215,6 @@ void slight_TLC5957::update() {
         }
         buffer_start += 1;
     }
-
 }
 
 void slight_TLC5957::write_SPI_with_function_command(
