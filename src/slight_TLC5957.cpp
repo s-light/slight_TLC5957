@@ -62,8 +62,8 @@ slight_TLC5957::slight_TLC5957(
     // gclk_pin(gclk_pin),
     sclk_pin(sclk_pin),
     sout_pin(sout_pin),
-    sin_pin(sin_pin)
-{
+    sin_pin(sin_pin
+) {
     ready = false;
 }
 

@@ -272,15 +272,15 @@ public:
       const uint8_t offset;
       const uint8_t length;
       const uint8_t mask;
-      const uint8_t default_value;
+      const uint8_t defaultv;
     };
 
-    // static const function_control_t PokerTransMode = {
-    //     .offset = 44,
-    //     .length = 1,
-    //     .mask = 0b1,
-    //     .default = 0b0,
-    // };
+    static constexpr function_control_t PokerTransMode = {
+        .offset = 44,
+        .length = 1,
+        .mask = 0b1,
+        .defaultv = 0b0,
+    };
 
     // const struct _FC_FIELDS_t {
     //   const function_control_t PokerTransMode = ;
