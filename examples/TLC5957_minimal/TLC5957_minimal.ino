@@ -243,13 +243,14 @@ void tlc_init(Print &out) {
 void update_animation() {
     if ((millis() - animation_timestamp) > animation_interval) {
         animation_timestamp = millis();
-        // tlc.setPixel()
+        tlc.set_pixel_16bit_value(step, 0, 0, 500);
         step += 1;
         Serial.print("step:");
         Serial.println(step);
         if (step >= tlc.pixel_count) {
             step = 0;
             Serial.println("step wrap around.");
+            tlc.set_pixel_all_16bit_value(0, 0, 0);
         }
     }
 }

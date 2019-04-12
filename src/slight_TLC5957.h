@@ -367,6 +367,34 @@ public:
 
     void set_fc_ESPWM_all(bool enable = false);
 
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // grayscale things
+
+    void set_pixel_16bit_value(
+        uint16_t pixel_index,
+        uint16_t value_r,
+        uint16_t value_g,
+        uint16_t value_b
+    );
+
+    void set_pixel_float_value(
+        uint16_t pixel_index, float value_r, float value_g, float value_b
+    );
+    
+    // set_pixel_16bit_color(self, pixel_index, color)
+    // set_pixel_float_color(self, pixel_index, color)
+    // set_pixel(self, pixel_index, value)
+
+    void set_pixel_all_16bit_value(
+        uint16_t value_r,
+        uint16_t value_g,
+        uint16_t value_b
+    );
+
+    // set_pixel_all(color)
+    // set_all_black()
+
+    void set_channel(uint16_t channel_index, uint16_t value);
 
 private:
 

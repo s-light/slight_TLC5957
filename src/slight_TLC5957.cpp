@@ -619,3 +619,124 @@ void slight_TLC5957::set_fc_ESPWM_all(bool enable) {
         set_fc_ESPWM(chip_index, enable);
     }
 }
+
+
+// ##########################################
+// GS things
+
+
+void slight_TLC5957::set_pixel_16bit_value(
+    uint16_t pixel_index, uint16_t value_r, uint16_t value_g, uint16_t value_b
+) {
+    // """
+    // Set the value for pixel.
+    //
+    // This is a Fast UNPROTECTED function:
+    // no error / range checking is done.
+    //
+    // :param int pixel_index: 0..(pixel_count)
+    // :param int value_r: 0..65535
+    // :param int value_g: 0..65535
+    // :param int value_b: 0..65535
+    // """
+    uint16_t pixel_start = pixel_index * COLORS_PER_PIXEL;
+    uint16_t buffer_start = (pixel_start + 0) * BUFFER_BYTES_PER_COLOR;
+    buffer[buffer_start] = value_b;
+    buffer_start = (pixel_start + 1) * BUFFER_BYTES_PER_COLOR;
+    buffer[buffer_start] = value_g;
+    buffer_start = (pixel_start + 2) * BUFFER_BYTES_PER_COLOR;
+    buffer[buffer_start] = value_r;
+}
+
+void slight_TLC5957::set_pixel_float_value(
+    uint16_t pixel_index, float value_r, float value_g, float value_b
+) {
+    // """
+    // Set the value for pixel.
+    //
+    // This is a Fast UNPROTECTED function:
+    // no error / range checking is done.
+    //
+    // :param int pixel_index: 0..(pixel_count)
+    // :param int value_r: 0..1
+    // :param int value_g: 0..1
+    // :param int value_b: 0..1
+    // """
+    uint16_t value_r_int = value_r * 65535;
+    uint16_t value_g_int = value_g * 65535;
+    uint16_t value_b_int = value_b * 65535;
+    uint16_t pixel_start = pixel_index * COLORS_PER_PIXEL;
+    uint16_t buffer_start = (pixel_start + 0) * BUFFER_BYTES_PER_COLOR;
+    buffer[buffer_start] = value_b_int;
+    buffer_start = (pixel_start + 1) * BUFFER_BYTES_PER_COLOR;
+    buffer[buffer_start] = value_g_int;
+    buffer_start = (pixel_start + 2) * BUFFER_BYTES_PER_COLOR;
+    buffer[buffer_start] = value_r_int;
+}
+
+// set_pixel_16bit_color(self, pixel_index, color)
+// set_pixel_float_color(self, pixel_index, color)
+// set_pixel(self, pixel_index, value)
+
+void slight_TLC5957::set_pixel_all_16bit_value(
+    uint16_t value_r, uint16_t value_g, uint16_t value_b
+) {
+        // """
+        // Set the R, G, B values for all pixels.
+        //
+        // fast. without error checking.
+        //
+        // :param int value_r: 0..65535
+        // :param int value_g: 0..65535
+        // :param int value_b: 0..65535
+        // """
+        for (size_t index = 0; index < pixel_count; index++) {
+            set_pixel_16bit_value(index, value_r, value_g, value_b);
+        }
+}
+
+// set_pixel_all( color)
+// set_all_black()
+
+void slight_TLC5957::set_channel(uint16_t channel_index, uint16_t value) {
+    // """
+    // Set the value for the provided channel.
+    //
+    // :param int channel_index: 0..channel_count
+    // :param int value: 0..65535
+    // """
+    if (channel_index < channel_count) {
+        // check if values are in range
+        // if not 0 <= value <= 65535:
+        //     raise ValueError(
+        //         "value {} not in range: 0..65535"
+        //     )
+        // temp = channel_index
+        // we change channel order here:
+        // buffer channel order is blue, green, red
+        uint16_t pixel_index_offset = channel_index % COLORS_PER_PIXEL;
+        if (pixel_index_offset == 0) {
+            channel_index += 2;
+        } else {
+            if (pixel_index_offset == 2) {
+                channel_index -= 2;
+            }
+        }
+        // print("{:>2} → {:>2}".format(temp, channel_index))
+        uint16_t buffer_index = channel_index * BUFFER_BYTES_PER_COLOR;
+        buffer[buffer_index] = value;
+        // _set_16bit_value_in_buffer(
+        //     COLORS_PER_PIXEL - channel_index, value)
+    }
+    // else:
+    //     raise IndexError(
+    //         "channel_index {} out of range (0..{})".format(
+    //             channel_index,
+    //             channel_count
+    //         )
+    //     )
+}
+
+// ##########################################
+// THE END
+// ##########################################
