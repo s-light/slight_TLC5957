@@ -325,14 +325,15 @@ public:
             const function_control_t *field = &_FC_FIELDS_EMPTY,
             uint16_t value = 0
     );
+
     uint16_t get_fc_bits_in_buffer(
         uint16_t chip_index = 0,
         uint8_t part_bit_offset = 0,
         const function_control_t *field = &_FC_FIELDS_EMPTY
     );
 
-
     void print_buffer_fc(Print &out);
+
 
     void set_fc_CC(
         uint16_t chip_index = 0,
@@ -359,28 +360,22 @@ public:
         // uint16_t BC_value = _FC_FIELDS.BC.defaultv
     );
 
-    void set_fc_BC_all(
-        uint16_t BC_value = 0b100
-        // uint16_t BC_value = _FC_FIELDS.BC.defaultv
-    );
+    void set_fc_BC_all(uint16_t BC_value = 0b100);
+    // void set_fc_BC_all(uint16_t BC_value = _FC_FIELDS.BC.defaultv);
 
     void set_fc_ESPWM(uint16_t chip_index = 0, bool enable = false);
 
     void set_fc_ESPWM_all(bool enable = false);
 
 
-
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // temp things
-
-    void write_SPI_with_function_command(
-        function_command_pulse_count function_command,
-        uint16_t value
-    );
-    void update_old();
-
 private:
+
+    // 10kHz
+    // const uint32_t spi_baudrate = (1 *   10 * 1000);
+    // 1MHz
+    const uint32_t spi_baudrate = (1 * 1000 * 1000);
+    // 10MHz
+    // const uint32_t spi_baudrate = (10 * 1000 * 1000);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // private functions
@@ -390,7 +385,11 @@ private:
 
     void _write_buffer_GS();
     void _write_buffer_FC();
-    void _write_buffer_with_function_command();
+    void _write_buffer_with_function_command(
+        function_command_pulse_count function_command,
+        uint16_t buffer_start,
+        uint16_t *buffer
+    );
 
     uint64_t _get_48bit_value_from_buffer(
         uint16_t *buffer, uint16_t buffer_start
@@ -404,11 +403,11 @@ private:
     // attributes
     bool ready;
 
-    const uint8_t latch;
-    const uint8_t gsclk;
-    const uint8_t spi_clock;
-    const uint8_t spi_mosi;
-    const uint8_t spi_miso;
+    const uint8_t _latch;
+    const uint8_t _gsclk;
+    const uint8_t _spi_clock;
+    const uint8_t _spi_mosi;
+    const uint8_t _spi_miso;
 
 
 

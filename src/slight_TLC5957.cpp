@@ -201,11 +201,11 @@ slight_TLC5957::slight_TLC5957(
     buffer(reinterpret_cast<uint16_t*>(calloc(buffer_byte_count, 1))),
     _buffer_fc_byte_count(chip_count * CHIP_BUFFER_BYTE_COUNT),
     _buffer_fc(reinterpret_cast<uint16_t*>(calloc(_buffer_fc_byte_count, 1))),
-    latch(latch),
-    gsclk(gsclk),
-    spi_clock(spi_clock),
-    spi_mosi(spi_mosi),
-    spi_miso(spi_miso
+    _latch(latch),
+    _gsclk(gsclk),
+    _spi_clock(spi_clock),
+    _spi_mosi(spi_mosi),
+    _spi_miso(spi_miso
 ) {
     ready = false;
 }
@@ -223,11 +223,11 @@ void slight_TLC5957::begin() {
     // start up...
     if (ready == false) {
         // setup
-        pinMode(latch, OUTPUT);
-        // pinMode(gsclk, OUTPUT);
-        pinMode(spi_miso, INPUT);
-        pinMode(spi_mosi, OUTPUT);
-        pinMode(spi_clock, OUTPUT);
+        pinMode(_latch, OUTPUT);
+        // pinMode(_gsclk, OUTPUT);
+        pinMode(_spi_miso, INPUT);
+        pinMode(_spi_mosi, OUTPUT);
+        pinMode(_spi_clock, OUTPUT);
         SPI.begin();
         // SPI.beginTransaction(SPISettings(10 * 1000000, MSBFIRST, SPI_MODE0));
         SPI.beginTransaction(SPISettings(1 * 1000000, MSBFIRST, SPI_MODE0));
@@ -249,19 +249,109 @@ void slight_TLC5957::end() {
 }
 
 
-
-
-
 void slight_TLC5957::_write_buffer_GS() {
-    // TODO(s-light): implement
+    // """Write out grayscale values."""
+    uint16_t buffer_start = 0;
+    uint16_t write_count = (CHIP_BUFFER_BYTE_COUNT * chip_count)
+        - CHIP_FUNCTION_CMD_BYTE_COUNT;
+
+    for (uint8_t pixel_index = 0; pixel_index < PIXEL_PER_CHIP; pixel_index++) {
+        // configure
+        SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+        // write GS data for all chips -1*16bit
+        // the transfer functions in buffer mode
+        // overwrite to the buffer with what comes back in :-(
+        // https://www.arduino.cc/en/Reference/SPITransfer
+        // SPI.transfer(buffer, write_count);
+        // SPI.transfer(reinterpret_cast<uint8_t*>(buffer_start), write_count);
+        // so we have two options here.
+        // - or we create a copy of the buffer
+        // - we do a for loop
+        for (uint16_t byte_index = 0; byte_index < write_count; byte_index++) {
+            SPI.transfer(buffer[buffer_start + byte_index]);
+        }
+        SPI.endTransaction();
+        buffer_start += write_count;
+        // special
+        if (pixel_index == (PIXEL_PER_CHIP - 1)) {
+            _write_buffer_with_function_command(
+                _FC__LATGS, buffer_start, buffer);
+        } else {
+            _write_buffer_with_function_command(
+                _FC__WRTGS, buffer_start, buffer);
+        }
+        buffer_start += CHIP_FUNCTION_CMD_BYTE_COUNT;
+    }
 }
 
 void slight_TLC5957::_write_buffer_FC() {
-    // TODO(s-light): implement
+    // """Write out function command values."""
+    // Write out the current state to the shift register.
+    uint16_t buffer_start = 0;
+    uint16_t write_count = (CHIP_BUFFER_BYTE_COUNT * chip_count)
+        - CHIP_FUNCTION_CMD_BYTE_COUNT;
+
+    // enable FC write
+    _write_buffer_with_function_command(
+        _FC__FCWRTEN, buffer_start, _buffer_fc);
+
+    // configure
+    SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+    // write FC data for all chips -1*16bit
+    // the transfer functions in buffer mode
+    // overwrite to the buffer with what comes back in :-(
+    // https://www.arduino.cc/en/Reference/SPITransfer
+    // so we do it in a for loop
+    for (uint16_t byte_index = 0; byte_index < write_count; byte_index++) {
+        SPI.transfer(_buffer_fc[buffer_start + byte_index]);
+    }
+    SPI.endTransaction();
+    buffer_start += write_count;
+    // special
+    _write_buffer_with_function_command(
+        _FC__WRTFC, buffer_start, _buffer_fc);
+    // done.
 }
 
-void slight_TLC5957::_write_buffer_with_function_command() {
-    // TODO(s-light): implement
+void slight_TLC5957::_write_buffer_with_function_command(
+    function_command_pulse_count function_command,
+    uint16_t buffer_start,
+    uint16_t *buffer
+) {
+    // """Bit-Banging SPI write to sync with latch pulse."""
+    uint16_t value = buffer[buffer_start];
+
+    // faster speeds with direct port access:
+    // https://forum.arduino.cc/index.php?topic=4324.0
+
+    pinMode(_spi_mosi, OUTPUT);
+    pinMode(_spi_clock, OUTPUT);
+
+    digitalWrite(_spi_clock, LOW);
+    digitalWrite(_spi_mosi, LOW);
+    digitalWrite(_latch, LOW);
+
+    uint8_t latch_start_index = CHIP_FUNCTION_CMD_BIT_COUNT - function_command;
+
+    for (uint8_t i = 0; i < CHIP_FUNCTION_CMD_BIT_COUNT; i++) {
+        if (latch_start_index == i) {
+            digitalWrite(_latch, HIGH);
+        }
+
+        // b1000000000000000
+        if (value & 0x8000u) {
+            digitalWrite(_spi_mosi, HIGH);
+        } else {
+            digitalWrite(_spi_mosi, LOW);
+        }
+        value <<= 1;
+
+        digitalWrite(_spi_clock, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(_spi_clock, LOW);
+    }
+
+    digitalWrite(_latch, LOW);
 }
 
 void slight_TLC5957::show() {
@@ -299,12 +389,13 @@ void slight_TLC5957::_set_48bit_value_in_buffer(
     if (value <= 0xFFFFFFFFFFFF) {
         // print("buffer_start", buffer_start, "value", value)
         // self._debug_print_buffer()
-        buffer[buffer_start + 0] = (value >> 40) & 0xFF;
-        buffer[buffer_start + 1] = (value >> 32) & 0xFF;
-        buffer[buffer_start + 2] = (value >> 24) & 0xFF;
-        buffer[buffer_start + 3] = (value >> 16) & 0xFF;
-        buffer[buffer_start + 4] = (value >>  8) & 0xFF;
-        buffer[buffer_start + 5] = value         & 0xFF;
+        buffer[buffer_start] = value & 0xFFFFFFFFFFFF;
+        // buffer[buffer_start + 0] = (value >> 40) & 0xFF;
+        // buffer[buffer_start + 1] = (value >> 32) & 0xFF;
+        // buffer[buffer_start + 2] = (value >> 24) & 0xFF;
+        // buffer[buffer_start + 3] = (value >> 16) & 0xFF;
+        // buffer[buffer_start + 4] = (value >>  8) & 0xFF;
+        // buffer[buffer_start + 5] = value         & 0xFF;
     }
     // else {
     //     raise ValueError(
@@ -487,6 +578,7 @@ void slight_TLC5957::print_buffer_fc(Print &out) {
     //     out.println("")
 }
 
+
 void slight_TLC5957::set_fc_CC(
     uint16_t chip_index,
     uint16_t CCR_value,
@@ -526,86 +618,4 @@ void slight_TLC5957::set_fc_ESPWM_all(bool enable) {
     for (size_t chip_index = 0; chip_index < chip_count; chip_index++) {
         set_fc_ESPWM(chip_index, enable);
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void slight_TLC5957::update_old() {
-    // TODO(s-light): implement.
-
-    uint16_t * buffer_start = buffer;
-    size_t write_inc = (CHIP_BUFFER_BYTE_COUNT * chip_count) - 2;
-
-    for (uint8_t i = 0; i < PIXEL_PER_CHIP; i++) {
-        SPI.beginTransaction(SPISettings(1 * 1000000, MSBFIRST, SPI_MODE0));
-        // write GS data for all chips -1*16bit
-        // SPI.transfer(buffer, write_inc);
-        SPI.transfer16(buffer_start[0]);
-        SPI.transfer16(buffer_start[2]);
-        // SPI.transfer(reinterpret_cast<uint8_t*>(buffer_start), write_inc);
-        buffer_start += (write_inc / 2);
-        SPI.endTransaction();
-        // special
-        if (i == (PIXEL_PER_CHIP - 1)) {
-            write_SPI_with_function_command(_FC__LATGS, *buffer_start);
-        } else {
-            write_SPI_with_function_command(_FC__WRTGS, *buffer_start);
-        }
-        buffer_start += 1;
-    }
-}
-
-
-
-
-void slight_TLC5957::write_SPI_with_function_command(
-    slight_TLC5957::function_command_pulse_count function_command,
-    uint16_t value
-) {
-    // faster speeds with direct port access...
-    // https://forum.arduino.cc/index.php?topic=4324.0
-
-    pinMode(spi_mosi, OUTPUT);
-    pinMode(spi_clock, OUTPUT);
-
-    digitalWrite(spi_clock, LOW);
-    digitalWrite(latch, LOW);
-
-    for (uint8_t i = 0; i < 16; i++) {
-        if ((16 - function_command) == i) {
-            digitalWrite(latch, HIGH);
-        }
-
-        // b1000000000000000
-        if (value & 0x8000u) {
-            digitalWrite(spi_mosi, HIGH);
-        } else {
-            digitalWrite(spi_mosi, LOW);
-        }
-        value <<= 1;
-
-        digitalWrite(spi_clock, HIGH);
-        delayMicroseconds(10);
-        digitalWrite(spi_clock, LOW);
-    }
-
-    digitalWrite(latch, LOW);
-    // TODO(s-light): check if this works.
 }
