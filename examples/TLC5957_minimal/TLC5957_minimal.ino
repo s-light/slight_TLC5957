@@ -252,6 +252,7 @@ void update_animation() {
             Serial.println("step wrap around.");
             tlc.set_pixel_all_16bit_value(0, 0, 0);
         }
+        tlc.show();
     }
 }
 
@@ -266,9 +267,11 @@ void setup() {
     digitalWrite(infoled_pin, HIGH);
 
     // wait for arduino IDE to release all serial ports after upload.
-    delay(500);
+    delay(1000);
     // initialise serial
     Serial.begin(115200);
+    Serial.println();
+    delay(1000);
     Serial.println();
 
     // print welcome
@@ -278,8 +281,8 @@ void setup() {
     tlc_init(Serial);
 
     // go
-    Serial.println(F("wait 0.5s."));
     delay(500);
+    Serial.println(F("wait 0.5s."));
     Serial.println(F("Loop:"));
 }
 
