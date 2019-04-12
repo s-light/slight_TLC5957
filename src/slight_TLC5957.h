@@ -181,98 +181,106 @@ public:
       const uint16_t defaultv;
     };
 
-    static const struct _FC_FIELDS_t {
-        const function_control_t LODVTH = {
-            .offset = 0,
-            .length = 2,
-            .mask = 0b11,
-            .defaultv = 0b01,
-        };
-        const function_control_t SEL_TD0 = {
-            .offset = 2,
-            .length = 2,
-            .mask = 0b11,
-            .defaultv = 0b01,
-        };
-        const function_control_t SEL_GDLY = {
-            .offset = 4,
-            .length = 1,
-            .mask = 0b1,
-            .defaultv = 0b1,
-        };
-        const function_control_t XREFRESH = {
-            .offset = 5,
-            .length = 1,
-            .mask = 0b1,
-            .defaultv = 0b0,
-        };
-        const function_control_t SEL_GCK_EDGE = {
-            .offset = 6,
-            .length = 1,
-            .mask = 0b1,
-            .defaultv = 0b0,
-        };
-        const function_control_t SEL_PCHG = {
-            .offset = 7,
-            .length = 1,
-            .mask = 0b1,
-            .defaultv = 0b0,
-        };
-        const function_control_t ESPWM = {
-            .offset = 8,
-            .length = 1,
-            .mask = 0b1,
-            .defaultv = 0b0,
-        };
-        const function_control_t LGSE3 = {
-            .offset = 9,
-            .length = 1,
-            .mask = 0b1,
-            .defaultv = 0b0,
-        };
-        const function_control_t LGSE1 = {
-            .offset = 11,
-            .length = 3,
-            .mask = 0b111,
-            .defaultv = 0b000,
-        };
-        const function_control_t CCB = {
-            .offset = 14,
-            .length = 9,
-            .mask = 0b111111111,
-            .defaultv = 0b100000000,
-        };
-        const function_control_t CCG = {
-            .offset = 23,
-            .length = 9,
-            .mask = 0b111111111,
-            .defaultv = 0b100000000,
-        };
-        const function_control_t CCR = {
-            .offset = 32,
-            .length = 9,
-            .mask = 0b111111111,
-            .defaultv = 0b100000000,
-        };
-        const function_control_t BC = {
-            .offset = 41,
-            .length = 3,
-            .mask = 0b111,
-            .defaultv = 0b100,
-        };
-        const function_control_t PokerTransMode = {
-            .offset = 44,
-            .length = 1,
-            .mask = 0b1,
-            .defaultv = 0b0,
-        };
-        const function_control_t LGSE2 = {
-            .offset = 45,
-            .length = 3,
-            .mask = 0b111,
-            .defaultv = 0b000,
-        };
-    } _FC_FIELDS;
+    static constexpr function_control_t _FC_FIELDS_EMPTY = {
+        .offset = 0,
+        .length = 0,
+        .mask = 0,
+        .defaultv = 0,
+    };
+
+    // this is now moved to the cpp file..
+    // static const struct _FC_FIELDS_t {
+    //     const function_control_t LODVTH = {
+    //         .offset = 0,
+    //         .length = 2,
+    //         .mask = 0b11,
+    //         .defaultv = 0b01,
+    //     };
+    //     const function_control_t SEL_TD0 = {
+    //         .offset = 2,
+    //         .length = 2,
+    //         .mask = 0b11,
+    //         .defaultv = 0b01,
+    //     };
+    //     const function_control_t SEL_GDLY = {
+    //         .offset = 4,
+    //         .length = 1,
+    //         .mask = 0b1,
+    //         .defaultv = 0b1,
+    //     };
+    //     const function_control_t XREFRESH = {
+    //         .offset = 5,
+    //         .length = 1,
+    //         .mask = 0b1,
+    //         .defaultv = 0b0,
+    //     };
+    //     const function_control_t SEL_GCK_EDGE = {
+    //         .offset = 6,
+    //         .length = 1,
+    //         .mask = 0b1,
+    //         .defaultv = 0b0,
+    //     };
+    //     const function_control_t SEL_PCHG = {
+    //         .offset = 7,
+    //         .length = 1,
+    //         .mask = 0b1,
+    //         .defaultv = 0b0,
+    //     };
+    //     const function_control_t ESPWM = {
+    //         .offset = 8,
+    //         .length = 1,
+    //         .mask = 0b1,
+    //         .defaultv = 0b0,
+    //     };
+    //     const function_control_t LGSE3 = {
+    //         .offset = 9,
+    //         .length = 1,
+    //         .mask = 0b1,
+    //         .defaultv = 0b0,
+    //     };
+    //     const function_control_t LGSE1 = {
+    //         .offset = 11,
+    //         .length = 3,
+    //         .mask = 0b111,
+    //         .defaultv = 0b000,
+    //     };
+    //     const function_control_t CCB = {
+    //         .offset = 14,
+    //         .length = 9,
+    //         .mask = 0b111111111,
+    //         .defaultv = 0b100000000,
+    //     };
+    //     const function_control_t CCG = {
+    //         .offset = 23,
+    //         .length = 9,
+    //         .mask = 0b111111111,
+    //         .defaultv = 0b100000000,
+    //     };
+    //     const function_control_t CCR = {
+    //         .offset = 32,
+    //         .length = 9,
+    //         .mask = 0b111111111,
+    //         .defaultv = 0b100000000,
+    //     };
+    //     const function_control_t BC = {
+    //         .offset = 41,
+    //         .length = 3,
+    //         .mask = 0b111,
+    //         .defaultv = 0b100,
+    //     };
+    //     const function_control_t PokerTransMode = {
+    //         .offset = 44,
+    //         .length = 1,
+    //         .mask = 0b1,
+    //         .defaultv = 0b0,
+    //     };
+    //     const function_control_t LGSE2 = {
+    //         .offset = 45,
+    //         .length = 3,
+    //         .mask = 0b111,
+    //         .defaultv = 0b000,
+    //     };
+    // } _FC_FIELDS;
 
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -308,8 +316,60 @@ public:
 
     const uint16_t buffer_byte_count;
     uint16_t *buffer;
-    const uint16_t buffer_fc_byte_count;
-    uint16_t *buffer_fc;
+    const uint16_t _buffer_fc_byte_count;
+    uint16_t *_buffer_fc;
+
+    void set_fc_bits_in_buffer(
+            uint16_t chip_index = 0,
+            uint8_t part_bit_offset = 0,
+            const function_control_t *field = &_FC_FIELDS_EMPTY,
+            uint16_t value = 0
+    );
+    uint16_t get_fc_bits_in_buffer(
+        uint16_t chip_index = 0,
+        uint8_t part_bit_offset = 0,
+        const function_control_t *field = &_FC_FIELDS_EMPTY
+    );
+
+
+    void print_buffer_fc(Print &out);
+
+    void set_fc_CC(
+        uint16_t chip_index = 0,
+        uint16_t CCR_value = 0b100000000,
+        uint16_t CCG_value = 0b100000000,
+        uint16_t CCB_value = 0b100000000
+        // uint16_t CCR_value = _FC_FIELDS.CCR.defaultv,
+        // uint16_t CCG_value = _FC_FIELDS.CCG.defaultv,
+        // uint16_t CCB_value = _FC_FIELDS.CCB.defaultv
+    );
+
+    void set_fc_CC_all(
+        uint16_t CCR_value = 0b100000000,
+        uint16_t CCG_value = 0b100000000,
+        uint16_t CCB_value = 0b100000000
+        // uint16_t CCR_value = _FC_FIELDS.CCR.defaultv,
+        // uint16_t CCG_value = _FC_FIELDS.CCG.defaultv,
+        // uint16_t CCB_value = _FC_FIELDS.CCB.defaultv
+    );
+
+    void set_fc_BC(
+        uint16_t chip_index = 0,
+        uint16_t BC_value = 0b100
+        // uint16_t BC_value = _FC_FIELDS.BC.defaultv
+    );
+
+    void set_fc_BC_all(
+        uint16_t BC_value = 0b100
+        // uint16_t BC_value = _FC_FIELDS.BC.defaultv
+    );
+
+    void set_fc_ESPWM(uint16_t chip_index = 0, bool enable = false);
+
+    void set_fc_ESPWM_all(bool enable = false);
+
+
+
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // temp things
@@ -331,6 +391,14 @@ private:
     void _write_buffer_GS();
     void _write_buffer_FC();
     void _write_buffer_with_function_command();
+
+    uint64_t _get_48bit_value_from_buffer(
+        uint16_t *buffer, uint16_t buffer_start
+    );
+    void _set_48bit_value_in_buffer(
+        uint16_t *buffer, uint16_t buffer_start, uint64_t value
+    );
+
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // attributes

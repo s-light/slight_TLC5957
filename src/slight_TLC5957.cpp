@@ -40,6 +40,107 @@
 #include "slight_TLC5957.h"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// register definitions
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+static const struct _FC_FIELDS_t {
+    const slight_TLC5957::function_control_t LODVTH = {
+        .offset = 0,
+        .length = 2,
+        .mask = 0b11,
+        .defaultv = 0b01,
+    };
+    const slight_TLC5957::function_control_t SEL_TD0 = {
+        .offset = 2,
+        .length = 2,
+        .mask = 0b11,
+        .defaultv = 0b01,
+    };
+    const slight_TLC5957::function_control_t SEL_GDLY = {
+        .offset = 4,
+        .length = 1,
+        .mask = 0b1,
+        .defaultv = 0b1,
+    };
+    const slight_TLC5957::function_control_t XREFRESH = {
+        .offset = 5,
+        .length = 1,
+        .mask = 0b1,
+        .defaultv = 0b0,
+    };
+    const slight_TLC5957::function_control_t SEL_GCK_EDGE = {
+        .offset = 6,
+        .length = 1,
+        .mask = 0b1,
+        .defaultv = 0b0,
+    };
+    const slight_TLC5957::function_control_t SEL_PCHG = {
+        .offset = 7,
+        .length = 1,
+        .mask = 0b1,
+        .defaultv = 0b0,
+    };
+    const slight_TLC5957::function_control_t ESPWM = {
+        .offset = 8,
+        .length = 1,
+        .mask = 0b1,
+        .defaultv = 0b0,
+    };
+    const slight_TLC5957::function_control_t LGSE3 = {
+        .offset = 9,
+        .length = 1,
+        .mask = 0b1,
+        .defaultv = 0b0,
+    };
+    const slight_TLC5957::function_control_t LGSE1 = {
+        .offset = 11,
+        .length = 3,
+        .mask = 0b111,
+        .defaultv = 0b000,
+    };
+    const slight_TLC5957::function_control_t CCB = {
+        .offset = 14,
+        .length = 9,
+        .mask = 0b111111111,
+        .defaultv = 0b100000000,
+    };
+    const slight_TLC5957::function_control_t CCG = {
+        .offset = 23,
+        .length = 9,
+        .mask = 0b111111111,
+        .defaultv = 0b100000000,
+    };
+    const slight_TLC5957::function_control_t CCR = {
+        .offset = 32,
+        .length = 9,
+        .mask = 0b111111111,
+        .defaultv = 0b100000000,
+    };
+    const slight_TLC5957::function_control_t BC = {
+        .offset = 41,
+        .length = 3,
+        .mask = 0b111,
+        .defaultv = 0b100,
+    };
+    const slight_TLC5957::function_control_t PokerTransMode = {
+        .offset = 44,
+        .length = 1,
+        .mask = 0b1,
+        .defaultv = 0b0,
+    };
+    const slight_TLC5957::function_control_t LGSE2 = {
+        .offset = 45,
+        .length = 3,
+        .mask = 0b111,
+        .defaultv = 0b000,
+    };
+} _FC_FIELDS;
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // helper
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -65,7 +166,7 @@ uint16_t slight_TLC5957::set_bit(
     // else to 0, and return the new value.
     // https://stackoverflow.com/a/12174051/574981
     // """
-    // Compute mask, an integer with just bit 'index' set.
+    // Compute mask, an integer with just bit "index" set.
     uint16_t mask = 1 << index;
     // Clear the bit indicated by the mask (if x is False)
     value &= ~mask;
@@ -98,8 +199,8 @@ slight_TLC5957::slight_TLC5957(
         ((pixel_count % PIXEL_PER_CHIP) > 0 ? 1 : 0)),
     buffer_byte_count(chip_count * CHIP_GS_BUFFER_BYTE_COUNT),
     buffer(reinterpret_cast<uint16_t*>(calloc(buffer_byte_count, 1))),
-    buffer_fc_byte_count(chip_count * CHIP_BUFFER_BYTE_COUNT),
-    buffer_fc(reinterpret_cast<uint16_t*>(calloc(buffer_fc_byte_count, 1))),
+    _buffer_fc_byte_count(chip_count * CHIP_BUFFER_BYTE_COUNT),
+    _buffer_fc(reinterpret_cast<uint16_t*>(calloc(_buffer_fc_byte_count, 1))),
     latch(latch),
     gsclk(gsclk),
     spi_clock(spi_clock),
@@ -112,7 +213,7 @@ slight_TLC5957::slight_TLC5957(
 slight_TLC5957::~slight_TLC5957() {
     end();
     free(buffer);
-    free(buffer_fc);
+    free(_buffer_fc);
 }
 
 
@@ -147,6 +248,22 @@ void slight_TLC5957::end() {
     }
 }
 
+
+
+
+
+void slight_TLC5957::_write_buffer_GS() {
+    // TODO(s-light): implement
+}
+
+void slight_TLC5957::_write_buffer_FC() {
+    // TODO(s-light): implement
+}
+
+void slight_TLC5957::_write_buffer_with_function_command() {
+    // TODO(s-light): implement
+}
+
 void slight_TLC5957::show() {
     // """Write out Grayscale Values to chips."""
     _write_buffer_GS();
@@ -158,22 +275,260 @@ void slight_TLC5957::update_fc() {
 }
 
 
+// ##########################################
+// general buffer things
 
+
+uint64_t slight_TLC5957::_get_48bit_value_from_buffer(
+    uint16_t *buffer, uint16_t buffer_start
+) {
+    return (uint64_t)buffer[buffer_start] & 0xFFFFFFFFFFFF;
+    // return (
+    //     (buffer[buffer_start + 0] << 40) |
+    //     (buffer[buffer_start + 1] << 32) |
+    //     (buffer[buffer_start + 2] << 24) |
+    //     (buffer[buffer_start + 3] << 16) |
+    //     (buffer[buffer_start + 4] <<  8) |
+    //      buffer[buffer_start + 5]);
+}
+
+void slight_TLC5957::_set_48bit_value_in_buffer(
+    uint16_t *buffer, uint16_t buffer_start, uint64_t value
+) {
+    // uint16_t is by definition > 0.
+    if (value <= 0xFFFFFFFFFFFF) {
+        // print("buffer_start", buffer_start, "value", value)
+        // self._debug_print_buffer()
+        buffer[buffer_start + 0] = (value >> 40) & 0xFF;
+        buffer[buffer_start + 1] = (value >> 32) & 0xFF;
+        buffer[buffer_start + 2] = (value >> 24) & 0xFF;
+        buffer[buffer_start + 3] = (value >> 16) & 0xFF;
+        buffer[buffer_start + 4] = (value >>  8) & 0xFF;
+        buffer[buffer_start + 5] = value         & 0xFF;
+    }
+    // else {
+    //     raise ValueError(
+    //         "value {} not in range: 0..0xFFFFFFFF"
+    //         "".format(value)
+    //     )
+    // }
+}
+
+
+// ##########################################
+// FC things
+
+void slight_TLC5957::set_fc_bits_in_buffer(
+        uint16_t chip_index,
+        uint8_t part_bit_offset,
+        const function_control_t *field,
+        uint16_t value
+) {
+    // """Set function control bits in buffer."""
+    // print(
+    //     "chip_index={} "
+    //     "part_bit_offset={} "
+    //     "field={} "
+    //     "value={} "
+    //     "".format(
+    //         chip_index,
+    //         part_bit_offset,
+    //         field,
+    //         value
+    //     )
+    // )
+    uint8_t offset = part_bit_offset + field->offset;
+    // restrict value
+    value &= field->mask;
+    // move value to position
+    value = value << offset;
+    // calculate header start
+    uint16_t header_start = chip_index * CHIP_BUFFER_BYTE_COUNT;
+    // get chip header
+    uint64_t header = _get_48bit_value_from_buffer(
+        _buffer_fc, header_start);
+    // print("{:048b}".format(header))
+    // 0xFFFFFFFFFFFF == 0b11111111111111111111111111111111....
+    // create/move mask
+    uint16_t mask = field->mask << offset;
+    // clear
+    header &= ~mask;
+    // set
+    header |= value;
+    // write header back
+    _set_48bit_value_in_buffer(_buffer_fc, header_start, header);
+}
+
+uint16_t slight_TLC5957::get_fc_bits_in_buffer(
+    uint16_t chip_index,
+    uint8_t part_bit_offset,
+    const function_control_t *field
+) {
+    // """Get function control bits in buffer."""
+    // print(
+    //     "chip_index={} "
+    //     "part_bit_offset={} "
+    //     "field={} "
+    //     "".format(
+    //         chip_index,
+    //         part_bit_offset,
+    //         field,
+    //     )
+    // )
+    uint8_t offset = part_bit_offset + field->offset;
+    // calculate header start
+    uint16_t header_start = chip_index * CHIP_BUFFER_BYTE_COUNT;
+    // get chip header
+    uint64_t header = _get_48bit_value_from_buffer(
+        _buffer_fc, header_start);
+    // print("{:048b}".format(header))
+    // 0xFFFFFFFFFFFF == 0b11111111111111111111111111111111....
+    // create/move mask
+    uint16_t mask = field->mask << offset;
+    uint16_t value = header & mask;
+    // move value to position
+    value = value >> offset;
+    return value;
+}
 
 
 void slight_TLC5957::_init_buffer_fc() {
-    // TODO(s-light): implement
+    const function_control_t *field;
+    for (size_t i = 0; i < chip_count; i++) {
+        // for (auto field : _FC_FIELDS) {
+        //     set_fc_bits_in_buffer(
+        //         i,
+        //         field,
+        //         field.defaultv);
+        // }
+
+        field = &_FC_FIELDS.LODVTH;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.SEL_TD0;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.SEL_GDLY;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.XREFRESH;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.SEL_GCK_EDGE;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.SEL_PCHG;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.ESPWM;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.LGSE3;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.LGSE1;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.CCB;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.CCG;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.CCR;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.BC;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.PokerTransMode;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+        field = &_FC_FIELDS.LGSE2;
+        set_fc_bits_in_buffer(i, 0, field, field->defaultv);
+    }
 }
 
-void slight_TLC5957::_write_buffer_GS() {
-    // TODO(s-light): implement
+void slight_TLC5957::print_buffer_fc(Print &out) {
+    // TODO(s-light): find a nice way to print this..
+    out.println("print_buffer_fc → TODO....");
+    // out.println("")
+    // result = {}
+    // // find longest name
+    // // and prepare result
+    // max_name_length = 0
+    // max_value_bin_length = 0
+    // max_value_hex_length = 0
+    // for name, content in self._FC_FIELDS.items():
+    //     result[name] = []
+    //     if max_name_length < len(name):
+    //         max_name_length = len(name)
+    //     if max_value_bin_length < content["length"]:
+    //         max_value_bin_length = content["length"]
+    //     mask_as_hex_len = len("{:x}".format(content["mask"]))
+    //     if max_value_hex_length < mask_as_hex_len:
+    //         max_value_hex_length = mask_as_hex_len
+    //
+    // // add default
+    // for (auto field : _FC_FIELDS) {
+    //     result[field_name].append(field.defaultv)
+    // }
+    //
+    // for (size_t i = 0; i < chip_count; i++) {
+    //     for (auto field : _FC_FIELDS) {
+    //         result[field_name].append(get_fc_bits_in_buffer(i, field));
+    //     }
+    // }
+    //
+    // // print
+    // ftemp = "{field_name:<" + str(max_name_length)  + "} | "
+    // out.print(ftemp.format(field_name = 'name/index'))
+    // ftemp = "{field_value:^" + str(max_value_bin_length) + "} | "
+    // // ftemp = "{field_value:>" + str(max_value_hex_length) + "} | "
+    // out.print(ftemp.format(field_value = 'def'))
+    // for index in range(self.chip_count):
+    //     ftemp = "{field_value:^" + str(max_value_bin_length) + "} | "
+    //     // ftemp = "{field_value:^" + str(max_value_hex_length) + "} | "
+    //     out.print(ftemp.format(field_value = index))
+    // out.print("")
+    // for name, content in result.items():
+    //     ftemp = "{field_name:<" + str(max_name_length)  + "} | "
+    //     out.print(ftemp.format(field_name = name))
+    //     for item in content:
+    //         ftemp = "{field_value:>" + str(max_value_bin_length) + "b} | "
+    //         // ftemp = "{field_value:>" + str(max_value_hex_length) + "x} | "
+    //         out.print(ftemp.format(field_value = item))
+    //     out.println("")
 }
-void slight_TLC5957::_write_buffer_FC() {
-    // TODO(s-light): implement
+
+void slight_TLC5957::set_fc_CC(
+    uint16_t chip_index,
+    uint16_t CCR_value,
+    uint16_t CCG_value,
+    uint16_t CCB_value
+) {
+    set_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.CCR, CCR_value);
+    set_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.CCG, CCG_value);
+    set_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.CCB, CCB_value);
 }
-void slight_TLC5957::_write_buffer_with_function_command() {
-    // TODO(s-light): implement
+
+void slight_TLC5957::set_fc_CC_all(
+    uint16_t CCR_value,
+    uint16_t CCG_value,
+    uint16_t CCB_value
+) {
+    for (size_t chip_index = 0; chip_index < chip_count; chip_index++) {
+        set_fc_CC(chip_index, CCR_value, CCG_value, CCB_value);
+    }
 }
+
+void slight_TLC5957::set_fc_BC(uint16_t chip_index, uint16_t BC_value) {
+    set_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.BC, BC_value);
+}
+
+void slight_TLC5957::set_fc_BC_all(uint16_t BC_value) {
+    for (size_t chip_index = 0; chip_index < chip_count; chip_index++) {
+        set_fc_BC(chip_index, BC_value);
+    }
+}
+
+void slight_TLC5957::set_fc_ESPWM(uint16_t chip_index, bool enable) {
+    set_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.ESPWM, enable);
+}
+
+void slight_TLC5957::set_fc_ESPWM_all(bool enable) {
+    for (size_t chip_index = 0; chip_index < chip_count; chip_index++) {
+        set_fc_ESPWM(chip_index, enable);
+    }
+}
+
+
 
 
 
@@ -216,6 +571,9 @@ void slight_TLC5957::update_old() {
         buffer_start += 1;
     }
 }
+
+
+
 
 void slight_TLC5957::write_SPI_with_function_command(
     slight_TLC5957::function_command_pulse_count function_command,
