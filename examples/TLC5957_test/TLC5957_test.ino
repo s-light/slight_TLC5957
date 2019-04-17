@@ -1,7 +1,7 @@
 /******************************************************************************
 
-    TLC5957_dev.ino
-        minimal usage for slight_TLC5957 library.
+    TLC5957_test.ino
+        some development test for slight_TLC5957 library.
         debugout on usbserial interface: 115200baud
 
     hardware:
@@ -77,8 +77,8 @@ void sketchinfo_print(Print &out) {
     out.println(F("|                      ( _ )                     |"));
     out.println(F("|                       \" \"                      |"));
     out.println(F("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"));
-    out.println(F("| TLC5957_dev.ino"));
-    out.println(F("|   minimal usage for slight_TLC5957 library"));
+    out.println(F("| TLC5957_test.ino"));
+    out.println(F("|   some development test for slight_TLC5957 library."));
     out.println(F("|"));
     out.println(F("| This Sketch has a debug-menu:"));
     out.println(F("| send '?'+Return for help"));
@@ -113,8 +113,8 @@ void sketchinfo_print(Print &out) {
     // __DATE__ Nov 11 2013
     // __TIME__ 20:35:04
     // __TIMESTAMP__ Tue Dec 27 14:14:04 2016
-    // __FILE__  /home/stefan/mydata/arduino_sketchbook/libraries/slight_TLC5957/examples/TLC5957_dev/TLC5957_dev.ino
-    // __BASE_FILE__ /tmp/arduino_build_330237/sketch/TLC5957_dev.ino.cpp
+    // __FILE__  /home/stefan/mydata/arduino_sketchbook/libraries/slight_TLC5957/examples/TLC5957_test/TLC5957_test.ino
+    // __BASE_FILE__ /tmp/arduino_build_330237/sketch/TLC5957_test.ino.cpp
 
 }
 
@@ -305,33 +305,62 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // out.println();
         } break;
         case 't': {
-            // get state
             out.println(F("SetBuffer:"));
             out.println(F("--- old"));
             print_tlc_buffer(out);
-            tlc.set_pixel_all_16bit_value(
-                255, 1, 127);
-                // 0b11000110, 0b11000110, 0b11000110); // 198
-                // 0x0055, 0x0055, 0x0055);
-                // 0b01010101, 0b10101010, 0b10011001);
-                // 0x0055, 0x00AA, 0x0099);
-                // 85, 170, 153);
-            out.println(F("--- new"));
+            // tlc.set_pixel_all_16bit_value(
+            //     255, 1, 1);
+            //     // 0b11000110, 0b11000110, 0b11000110); // 198
+            //     // 0x0055, 0x0055, 0x0055);
+            //     // 0b01010101, 0b10101010, 0b10011001);
+            //     // 0x0055, 0x00AA, 0x0099);
+            //     // 85, 170, 153);
+            // out.println(F("--- new"));
+            // print_tlc_buffer(out);
+
+            out.println(F("--- red"));
+            tlc.set_pixel_all_16bit_value(1, 0, 0);
             print_tlc_buffer(out);
+            tlc.show();
+            delay(1000);
+            out.println(F("--- green"));
+            tlc.set_pixel_all_16bit_value(0, 1, 0);
+            print_tlc_buffer(out);
+            tlc.show();
+            delay(1000);
+            out.println(F("--- blue"));
+            tlc.set_pixel_all_16bit_value(0, 0, 1);
+            print_tlc_buffer(out);
+            tlc.show();
+            delay(1000);
+            out.println(F("--- red full"));
+            tlc.set_pixel_all_16bit_value(65535, 0, 0);
+            print_tlc_buffer(out);
+            tlc.show();
+            delay(100);
+            out.println(F("--- white"));
+            tlc.set_pixel_all_16bit_value(1, 1, 1);
+            print_tlc_buffer(out);
+            tlc.show();
+
             out.println();
         } break;
         case 'p': {
-            // set pixel
-            out.println(F("TODO!!!!!"));
             out.print(F("Set pixel "));
-            // uint16_t index = atoi(&command[1]);
-            // out.print(index);
-            out.print("all");
+            uint8_t command_offset = 1;
+            uint8_t index = atoi(&command[command_offset]);
+            // a better way than this would be to search for the ':'
+            // i have used this a long time ago for MAC address format parsing
+            // was something with 'tokenize' or similar..
+            command_offset = 3;
+            if (index > 9) {
+                command_offset = command_offset +1;
+            }
+            out.print(index);
             out.print(F(" to "));
-            uint16_t value = atoi(&command[1]);
+            uint16_t value = atoi(&command[command_offset]);
             out.print(value);
-            tlc.set_pixel_all_16bit_value(value, value, value);
-            // tlc.set_pixel_16bit_value(index, value, value, value);
+            tlc.set_pixel_16bit_value(index, value, value, value);
             out.println();
         } break;
         case 'P': {
@@ -377,7 +406,9 @@ void tlc_init(Print &out) {
         tlc.begin();
 
         // 0.28MHz
-        tlc.spi_baudrate = 0.28 * 1000 * 1000;
+        // tlc.spi_baudrate = 0.28 * 1000 * 1000;
+        // 0.001MHz = 1000kHz
+        tlc.spi_baudrate = 0.001 * 1000 * 1000;
 
         out.print(F("  tlc.pixel_count: "));
         out.print(tlc.pixel_count);
@@ -553,9 +584,9 @@ void print_tlc_buffer(Print &out) {
     uint16_t *buffer = reinterpret_cast<uint16_t *>(tlc.buffer);
     char color_names[][6] = {
         "index",
-        "red  ",
-        "green",
         "blue ",
+        "green",
+        "red  ",
     };
     // print pixel index
     out.print(color_names[0]);
@@ -572,13 +603,19 @@ void print_tlc_buffer(Print &out) {
         uint16_t offset = color_i * tlc.COLORS_PER_PIXEL;
         out.print(color_names[color_i + 1]);
         out.print(F(" "));
-        index = 0;
+        index = color_i;
         slight_DebugMenu::print_uint16_align_right(
-            out, buffer[offset + index]);
-        for (index = 1; index < tlc.pixel_count; index++) {
+            out, buffer[index]);
+            // out, index);
+        for (
+            index += tlc.COLORS_PER_PIXEL;
+            index < tlc.channel_count;
+            index += tlc.COLORS_PER_PIXEL
+        ) {
             out.print(F(", "));
             slight_DebugMenu::print_uint16_align_right(
-                out, buffer[offset + index]);
+                out, buffer[index]);
+                // out, index);
         }
         out.println();
     }

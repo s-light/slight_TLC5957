@@ -245,7 +245,7 @@ void tlc_init(Print &out) {
 void update_animation() {
     if ((millis() - animation_timestamp) > animation_interval) {
         animation_timestamp = millis();
-        tlc.set_pixel_16bit_value(step, 0, 0, 500);
+        tlc.set_pixel_16bit_value(step, 1, 1, 1);
         step += 1;
         Serial.print("step:");
         Serial.println(step);
