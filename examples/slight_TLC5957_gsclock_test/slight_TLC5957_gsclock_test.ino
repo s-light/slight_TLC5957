@@ -226,7 +226,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.print(F("set frequency - new value:"));
             float value = atof(&command[1]);
             out.print(value);
-            value = gsclock_set_frequency(value);
+            value = gsclock_set_frequency_MHz(value);
             out.print(F(" → "));
             out.print(value);
             out.println();
@@ -397,7 +397,7 @@ void setup_D9_1MHz() {
 }
 
 
-float gsclock_set_frequency(float frequency_MHz) {
+float gsclock_set_frequency_MHz(float frequency_MHz) {
     const float frequency_MHz_min = 0.117 ;
     const float frequency_MHz_max = 30.0;
     if (frequency_MHz < frequency_MHz_min) {

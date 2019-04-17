@@ -328,7 +328,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.print(F("set grayscale frequency - new value:"));
             float value = atof(&command[1]);
             out.print(value);
-            value = gsclock_set_frequency(value);
+            value = gsclock_set_frequency_MHz(value);
             out.print(F(" → "));
             out.print(value);
             out.println();
@@ -365,14 +365,16 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             //     tlc.set_pixel_16bit_value(i, 0b01010101, 0b10101010, 0b10011001);
             // }
             out.println(F("--- old"));
-            slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
+            slight_DebugMenu::print_uint16_array(
+                out, tlc.buffer, tlc.buffer_byte_count);
             tlc.set_pixel_all_16bit_value(
                 0x0055, 0x0055, 0x0055);
                 // 0b01010101, 0b10101010, 0b10011001);
                 // 0x0055, 0x00AA, 0x0099);
                 // 85, 170, 153);
             out.println(F("--- new"));
-            slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
+            slight_DebugMenu::print_uint16_array(
+                out, tlc.buffer, tlc.buffer_byte_count);
             out.println();
         } break;
         case 'p': {
@@ -380,13 +382,15 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("Set Pixel"));
             out.println(F("TODO"));
 
-            slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
+            slight_DebugMenu::print_uint16_array(
+                out, tlc.buffer, tlc.buffer_byte_count);
             out.println();
         } break;
         case 'B': {
             // set pixel
             out.println(F("Print Buffer:"));
-            slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
+            slight_DebugMenu::print_uint16_array(
+                out, tlc.buffer, tlc.buffer_byte_count);
             out.println();
         } break;
         //---------------------------------------------------------------------
@@ -409,8 +413,10 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
 
 void tlc_init(Print &out) {
     out.println(F("setup tlc:")); {
-
+        out.println(F("tlc.begin()"));
         tlc.begin();
+        out.println(F("set gsclock to 3MHz."));
+        gsclock_set_frequency_MHz(3.0);
     }
     out.println(F("\t finished."));
 }
@@ -518,22 +524,24 @@ void setup_D9_10MHz() {
 }
 
 
-float gsclock_set_frequency(float frequency_MHz) {
+
+float gsclock_set_frequency_MHz(float frequency_MHz) {
     const float frequency_MHz_min = 0.117 ;
     const float frequency_MHz_max = 30.0;
-    float frequency_MHz_result = -1;
-    if (
-        (frequency_MHz > frequency_MHz_min) &&
-        (frequency_MHz < frequency_MHz_max)
-    ) {
-        // initialise to 1MHz
-        uint8_t period_reg = 29;
-        float req_raw = ((60 / 2) / frequency_MHz) -1;
-        period_reg = int(req_raw);
-        set_D9_period_reg(period_reg);
-        // calculate actual used frequency
-        frequency_MHz_result = (60 / 2) / (period_reg + 1);
+    if (frequency_MHz < frequency_MHz_min) {
+        frequency_MHz = frequency_MHz_min;
     }
+    if (frequency_MHz > frequency_MHz_max) {
+        frequency_MHz = frequency_MHz_max;
+    }
+    float frequency_MHz_result = -1;
+    // initialise to 1MHz
+    uint8_t period_reg = 29;
+    float req_raw = ((60 / 2) / frequency_MHz) -1;
+    period_reg = int(req_raw);
+    set_D9_period_reg(period_reg);
+    // calculate actual used frequency
+    frequency_MHz_result = (60.0 / 2) / (period_reg + 1);
     return frequency_MHz_result;
 }
 
