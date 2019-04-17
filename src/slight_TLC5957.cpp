@@ -208,6 +208,8 @@ slight_TLC5957::slight_TLC5957(
     _spi_miso(spi_miso
 ) {
     ready = false;
+
+    // dynamic spi_baudrate for development:
     // 1kHz
     // spi_baudrate = (1 *    1 *  1000);
     // 4MHz
@@ -229,10 +231,12 @@ void slight_TLC5957::begin() {
         // setup
         pinMode(_latch, OUTPUT);
         // pinMode(_gsclk, OUTPUT);
-        pinMode(_spi_miso, INPUT);
-        pinMode(_spi_mosi, OUTPUT);
-        pinMode(_spi_clock, OUTPUT);
-        SPI.begin();
+
+        // these are done when needed in
+        // _write_buffer_with_function_command()
+        // pinMode(_spi_miso, INPUT);
+        // pinMode(_spi_mosi, OUTPUT);
+        // pinMode(_spi_clock, OUTPUT);
 
         // _init_buffer_fc();
         // update_fc();
@@ -240,16 +244,17 @@ void slight_TLC5957::begin() {
         // write initial 0 values
         // show();
         // show();
-        Serial.print(F("TLC5957 begin → spi_baudrate: "));
-        Serial.print(spi_baudrate);
-        Serial.println(F("Hz"));
+        // Serial.print(F("TLC5957 begin → spi_baudrate: "));
+        // Serial.print(spi_baudrate);
+        // Serial.println(F("Hz"));
     }
 }
 
 void slight_TLC5957::end() {
     if (ready) {
-        SPI.endTransaction();
-        SPI.end();
+        // SPI is allready ended.
+        // SPI.endTransaction();
+        // SPI.end();
     }
 }
 
@@ -262,6 +267,7 @@ void slight_TLC5957::_write_buffer_GS() {
 
     for (uint8_t pixel_index = 0; pixel_index < PIXEL_PER_CHIP; pixel_index++) {
         // configure
+        SPI.begin();
         SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
         // SPI.beginTransaction(SPISettings((100), MSBFIRST, SPI_MODE0));
         // write GS data for all chips -1*16bit
@@ -277,6 +283,7 @@ void slight_TLC5957::_write_buffer_GS() {
             SPI.transfer(buffer[buffer_start + byte_index]);
         }
         SPI.endTransaction();
+        SPI.end();
         buffer_start += write_count;
         // special
         if (pixel_index == (PIXEL_PER_CHIP - 1)) {
@@ -302,6 +309,7 @@ void slight_TLC5957::_write_buffer_FC() {
         _FC__FCWRTEN, buffer_start, _buffer_fc);
 
     // configure
+    SPI.begin();
     SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
     // SPI.beginTransaction(SPISettings((100), MSBFIRST, SPI_MODE0));
     // write FC data for all chips -1*16bit
@@ -313,6 +321,7 @@ void slight_TLC5957::_write_buffer_FC() {
         SPI.transfer(_buffer_fc[buffer_start + byte_index]);
     }
     SPI.endTransaction();
+    SPI.end();
     buffer_start += write_count;
     // special
     _write_buffer_with_function_command(
@@ -354,9 +363,11 @@ void slight_TLC5957::_write_buffer_with_function_command(
         value <<= 1;
 
         digitalWrite(_spi_clock, HIGH);
-        delayMicroseconds(10);
+        // delayMicroseconds(1);
+        // the delay introduced by the digitalWrite results in 465ns HIGH
         digitalWrite(_spi_clock, LOW);
     }
+    // overall this  results in about 720kHz
 
     digitalWrite(_latch, LOW);
 }

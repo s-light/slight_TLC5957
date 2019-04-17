@@ -396,6 +396,7 @@ public:
 
     void set_channel(uint16_t channel_index, uint16_t value);
 
+    // dynamic spi_baudrate for development only
     uint32_t spi_baudrate;
 
 private:
@@ -410,6 +411,8 @@ private:
     // const uint32_t spi_baudrate = (1 * 1000 * 1000);
     // 10MHz
     // const uint32_t spi_baudrate = (10 * 1000 * 1000);
+    // 30MHz
+    // const uint32_t spi_baudrate = (30 * 1000 * 1000);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // private functions
