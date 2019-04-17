@@ -272,8 +272,8 @@ void setup() {
     delay(1000);
     // initialise serial
     Serial.begin(115200);
-    Serial.println();
     delay(1000);
+    Serial.println();
     Serial.println();
 
     // print welcome
@@ -283,9 +283,9 @@ void setup() {
     tlc_init(Serial);
 
     // go
-    delay(500);
     Serial.println(F("wait 0.5s."));
-    Serial.println(F("Loop:"));
+    delay(500);
+    Serial.println(F("loop:"));
 }
 
 void loop() {

@@ -315,9 +315,9 @@ public:
     const uint8_t chip_count;
 
     const uint16_t buffer_byte_count;
-    uint16_t *buffer;
+    uint8_t *buffer;
     const uint16_t _buffer_fc_byte_count;
-    uint16_t *_buffer_fc;
+    uint8_t *_buffer_fc;
 
     void set_fc_bits_in_buffer(
             uint16_t chip_index = 0,
@@ -422,14 +422,14 @@ private:
     void _write_buffer_with_function_command(
         function_command_pulse_count function_command,
         uint16_t buffer_start,
-        uint16_t *buffer
+        uint8_t *buffer
     );
 
     uint64_t _get_48bit_value_from_buffer(
-        uint16_t *buffer, uint16_t buffer_start
+        uint8_t *buffer, uint16_t buffer_start
     );
     void _set_48bit_value_in_buffer(
-        uint16_t *buffer, uint16_t buffer_start, uint64_t value
+        uint8_t *buffer, uint16_t buffer_start, uint64_t value
     );
 
 

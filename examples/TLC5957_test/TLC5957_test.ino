@@ -166,11 +166,11 @@ const uint8_t pixel_count = 16;
 slight_TLC5957 tlc = slight_TLC5957(pixel_count);
 
 
-bool tlc_show = false;
+bool animation_run = false;
 
 unsigned long animation_timestamp = 0;
-// const uint16_t animation_interval = 1000; //ms
-const uint16_t animation_interval = 20; //ms
+//uint16_t animation_interval = 1000; //ms
+uint16_t animation_interval = 15; //ms
 
 uint8_t step = 0;
 
@@ -226,11 +226,13 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // out.println();
             // out.println(F("\t 'f': test fc 'f'"));
             out.println(F("\t 'u': tlc.show() 'u'"));
-            out.println(F("\t 'U': toggle tlc.show 'U'"));
-            out.println(F("\t 'g': set grayscale frequency in MHz 'g:1.0'"));
-            // out.println(F("\t 's': set spi frequency in kHz 's:1.0'"));
+            out.println(F("\t 'r': toggle animation_run 'r'"));
+            out.println(F("\t 'a': set animation_interval 'a1000'"));
+            out.println(F("\t 'g': set grayscale frequency in MHz 'g1.0'"));
+            // out.println(F("\t 's': set spi frequency in kHz 's1.0'"));
             out.println(F("\t 'B': print Buffer 'B'"));
             out.println(F("\t 'b': set buffer 'b'"));
+            out.println(F("\t 'P': set all pixel to black 'P'"));
             out.println(F("\t 'p': set pixel 'p0:255'"));
             out.println();
             out.println(F("____________________________________________________________"));
@@ -319,10 +321,16 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("write buffer to chips"));
             tlc.show();
         } break;
-        case 'U': {
-            // get state
-            out.println(F("toggle tlc_show"));
-            tlc_show = !tlc_show;
+        case 'r': {
+            out.println(F("toggle animation_run"));
+            animation_run = !animation_run;
+        } break;
+        case 'a': {
+            out.println(F("set animation interval:"));
+            uint8_t value = atoi(&command[1]);
+            out.print(value);
+            animation_interval = value;
+            out.println();
         } break;
         case 'g': {
             out.print(F("set grayscale frequency - new value:"));
@@ -343,11 +351,13 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // tlc.spi_baudrate = value_Hz;
             // out.print(value_Hz);
             // out.println();
-            out.println(F("Set SPI clockDivider"));
-            uint8_t value = atoi(&command[1]);
-            out.print(value);
-            SPI.setClockDivider(value);
-            out.println();
+
+            // old syntax:
+            // out.println(F("Set SPI clockDivider"));
+            // uint8_t value = atoi(&command[1]);
+            // out.print(value);
+            // SPI.setClockDivider(value);
+            // out.println();
         } break;
         case 'b': {
             // get state
@@ -365,32 +375,33 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             //     tlc.set_pixel_16bit_value(i, 0b01010101, 0b10101010, 0b10011001);
             // }
             out.println(F("--- old"));
-            slight_DebugMenu::print_uint16_array(
-                out, tlc.buffer, tlc.buffer_byte_count);
+            print_tlc_buffer(out);
             tlc.set_pixel_all_16bit_value(
                 0x0055, 0x0055, 0x0055);
                 // 0b01010101, 0b10101010, 0b10011001);
                 // 0x0055, 0x00AA, 0x0099);
                 // 85, 170, 153);
             out.println(F("--- new"));
-            slight_DebugMenu::print_uint16_array(
-                out, tlc.buffer, tlc.buffer_byte_count);
+            print_tlc_buffer(out);
             out.println();
         } break;
         case 'p': {
             // set pixel
             out.println(F("Set Pixel"));
             out.println(F("TODO"));
-
-            slight_DebugMenu::print_uint16_array(
-                out, tlc.buffer, tlc.buffer_byte_count);
+            uint8_t value = atoi(&command[1]);
+            out.println();
+        } break;
+        case 'P': {
+            // set pixel
+            out.println(F("Set all Pixel to black."));
+            tlc.set_pixel_all_16bit_value(0, 0, 0);
             out.println();
         } break;
         case 'B': {
             // set pixel
             out.println(F("Print Buffer:"));
-            slight_DebugMenu::print_uint16_array(
-                out, tlc.buffer, tlc.buffer_byte_count);
+            print_tlc_buffer(out);
             out.println();
         } break;
         //---------------------------------------------------------------------
@@ -415,16 +426,27 @@ void tlc_init(Print &out) {
     out.println(F("setup tlc:")); {
         out.println(F("tlc.begin()"));
         tlc.begin();
-        out.println(F("set gsclock to 3MHz."));
-        gsclock_set_frequency_MHz(3.0);
+
+        out.println(F("tlc.pixel_count: "));
+        out.print(tlc.pixel_count);
+        out.println();
+        out.println(F("tlc.chip_count: "));
+        out.print(tlc.chip_count);
+        out.println();
+        out.println(F("tlc.buffer_byte_count: "));
+        out.print(tlc.buffer_byte_count);
+        out.println();
     }
     out.println(F("\t finished."));
 }
 
 
 void gsclock_init(Print &out) {
-    out.println(F("setup gsclock:")); {
+    out.println(F("init gsclock:")); {
+        out.println(F("init gsclock timer."));
         setup_D9_10MHz();
+        out.println(F("set gsclock to 3MHz."));
+        gsclock_set_frequency_MHz(3.0);
     }
     out.println(F("\t finished."));
 }
@@ -524,7 +546,6 @@ void setup_D9_10MHz() {
 }
 
 
-
 float gsclock_set_frequency_MHz(float frequency_MHz) {
     const float frequency_MHz_min = 0.117 ;
     const float frequency_MHz_max = 30.0;
@@ -552,7 +573,27 @@ void set_D9_period_reg(uint8_t period_reg) {
 }
 
 
-void update_test() {
+void print_tlc_buffer(Print &out) {
+    slight_DebugMenu::print_uint16_array(
+        out,
+        reinterpret_cast<uint16_t *>(tlc.buffer),
+        tlc.buffer_byte_count / 2);
+}
+
+
+
+void animation_init(Print &out) {
+    out.println(F("init animation:")); {
+        out.println(F("animation_interval: "));
+        out.print(animation_interval);
+        out.println();
+    }
+    out.println(F("\t finished."));
+}
+
+
+
+void animation_update() {
     if ((millis() - animation_timestamp) > animation_interval) {
         animation_timestamp = millis();
         // tlc.set_pixel_16bit_value(step, 0, 0, 500);
@@ -564,7 +605,7 @@ void update_test() {
         //     Serial.println("step wrap around.");
         //     tlc.set_pixel_all_16bit_value(0, 0, 0);
         // }
-        if (tlc_show) {
+        if (animation_run) {
             tlc.show();
         }
     }
@@ -620,6 +661,7 @@ void setup() {
 
         tlc_init(Serial);
         gsclock_init(Serial);
+        animation_init(Serial);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // show serial commands
@@ -647,7 +689,7 @@ void loop() {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // test things
 
-        update_test();
+        animation_update();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // debug output

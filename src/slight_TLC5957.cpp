@@ -198,9 +198,9 @@ slight_TLC5957::slight_TLC5957(
         // check if we pixels for a part of an chip
         ((pixel_count % PIXEL_PER_CHIP) > 0 ? 1 : 0)),
     buffer_byte_count(chip_count * CHIP_GS_BUFFER_BYTE_COUNT),
-    buffer(reinterpret_cast<uint16_t*>(calloc(buffer_byte_count, 1))),
+    buffer(reinterpret_cast<uint8_t*>(calloc(buffer_byte_count, 1))),
     _buffer_fc_byte_count(chip_count * CHIP_BUFFER_BYTE_COUNT),
-    _buffer_fc(reinterpret_cast<uint16_t*>(calloc(_buffer_fc_byte_count, 1))),
+    _buffer_fc(reinterpret_cast<uint8_t*>(calloc(_buffer_fc_byte_count, 1))),
     _latch(latch),
     _gsclk(gsclk),
     _spi_clock(spi_clock),
@@ -316,7 +316,7 @@ void slight_TLC5957::_write_buffer_FC() {
 void slight_TLC5957::_write_buffer_with_function_command(
     function_command_pulse_count function_command,
     uint16_t buffer_start,
-    uint16_t *buffer
+    uint8_t *buffer
 ) {
     // """Bit-Banging SPI write to sync with latch pulse."""
     uint16_t value = buffer[buffer_start];
@@ -370,7 +370,7 @@ void slight_TLC5957::update_fc() {
 
 
 uint64_t slight_TLC5957::_get_48bit_value_from_buffer(
-    uint16_t *buffer, uint16_t buffer_start
+    uint8_t *buffer, uint16_t buffer_start
 ) {
     return (uint64_t)buffer[buffer_start] & 0xFFFFFFFFFFFF;
     // return (
@@ -383,7 +383,7 @@ uint64_t slight_TLC5957::_get_48bit_value_from_buffer(
 }
 
 void slight_TLC5957::_set_48bit_value_in_buffer(
-    uint16_t *buffer, uint16_t buffer_start, uint64_t value
+    uint8_t *buffer, uint16_t buffer_start, uint64_t value
 ) {
     // uint16_t is by definition > 0.
     if (value <= 0xFFFFFFFFFFFF) {
