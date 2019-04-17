@@ -180,9 +180,9 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("\t 'Y': toggle DebugOut livesign LED"));
             out.println(F("\t 'x': tests"));
             out.println();
-            out.println(F("\t 'f': set spi baudrate in MHz 'f:1.0'"));
+            out.println(F("\t 's': set spi baudrate in MHz 's1.0'"));
             out.println(F("\t 'r': toggle animation_run 'r'"));
-            out.println(F("\t 'a': set animation_interval ms 'a:1000'"));
+            out.println(F("\t 'a': set animation_interval ms 'a1000'"));
             out.println();
             out.println(F("____________________________________________________________"));
         } break;

@@ -396,12 +396,12 @@ public:
 
     void set_channel(uint16_t channel_index, uint16_t value);
 
-    // uint32_t spi_baudrate = (1 *    1 *  100);
+    uint32_t spi_baudrate;
 
 private:
 
     // 100Hz
-    const uint32_t spi_baudrate = (1 *    1 *  100);
+    // const uint32_t spi_baudrate = (1 *    1 *  100);
     // 1kHz
     // const uint32_t spi_baudrate = (1 *    1 * 1000);
     // 10kHz

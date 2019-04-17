@@ -181,22 +181,6 @@ uint8_t step = 0;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // debug things
 
-// freeRam found at
-// http://forum.arduino.cc/index.php?topic=183790.msg1362282#msg1362282
-// posted by mrburnette
-int freeRam () {
-    // for ATmega32U4 devices:
-    #if defined (__AVR__)
-        extern int __heap_start, *__brkval;
-        int v;
-        return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-    #else
-        return 0;
-    #endif
-}
-
-
-
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Menu System
@@ -226,14 +210,23 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // out.println();
             // out.println(F("\t 'f': test fc 'f'"));
             out.println(F("\t 'u': tlc.show() 'u'"));
-            out.println(F("\t 'r': toggle animation_run 'r'"));
-            out.println(F("\t 'a': set animation_interval 'a1000'"));
-            out.println(F("\t 'g': set grayscale frequency in MHz 'g1.0'"));
-            // out.println(F("\t 's': set spi frequency in kHz 's1.0'"));
+            out.print(F("\t 'r': toggle animation_run 'r' ("));
+            out.print(animation_run);
+            out.println(F(")"));
+            out.print(F("\t 'a': set animation_interval 'a1000' ("));
+            out.print(animation_interval);
+            out.println(F("ms)"));
+            out.print(F("\t 'g': set grayscale frequency in MHz 'g1.0' ("));
+            out.print(gsclock_get_frequency_MHz(), 4);
+            out.println(F("MHz)"));
+            out.print(F("\t 's': set spi baudrate in MHz 's1.0' ("));
+            out.print(tlc.spi_baudrate / (1000.0 * 1000), 4);
+            out.println(F("MHz)"));
+            out.println(F("\t 't': set buffer to test values 't'"));
+            out.println(F("\t 'p': set pixel 'p0:65535'"));
+            out.println(F("\t 'P': set all pixel 'p65535'"));
+            out.println(F("\t 'b': set all pixel to black 'b'"));
             out.println(F("\t 'B': print Buffer 'B'"));
-            out.println(F("\t 'b': set buffer 'b'"));
-            out.println(F("\t 'P': set all pixel to black 'P'"));
-            out.println(F("\t 'p': set pixel 'p0:255'"));
             out.println();
             out.println(F("____________________________________________________________"));
         } break;
@@ -277,46 +270,6 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
 
             out.println(F("__________"));
         } break;
-        //---------------------------------------------------------------------
-        // case 'w': {
-        //     // get state
-        //     out.println(F("test write."));
-        //     uint8_t value = atoi(&command[1]);
-        //     switch (value) {
-        //         case 0: {
-        //             out.println(F("write"));
-        //             tlc.write();
-        //         } break;
-        //         case 1: {
-        //             out.println(F("fc_WRTGS"));
-        //             tlc.generate_function_command(fc_WRTGS);
-        //         } break;
-        //         case 3: {
-        //             out.println(F("fc_LATGS"));
-        //             tlc.generate_function_command(fc_LATGS);
-        //         } break;
-        //         case 5: {
-        //             out.println(F("fc_WRTFC"));
-        //             tlc.generate_function_command(fc_WRTFC);
-        //         } break;
-        //         case 7: {
-        //             out.println(F("fc_LINERESET"));
-        //             tlc.generate_function_command(fc_LINERESET);
-        //         } break;
-        //         case 11: {
-        //             out.println(F("fc_READFC"));
-        //             tlc.generate_function_command(fc_READFC);
-        //         } break;
-        //         case 13: {
-        //             out.println(F("fc_TMGRST"));
-        //             tlc.generate_function_command(fc_TMGRST);
-        //         } break;
-        //         case 15: {
-        //             out.println(F("fc_FCWRTEN"));
-        //             tlc.generate_function_command(fc_FCWRTEN);
-        //         } break;
-        //     }
-        // } break;
         case 'u': {
             out.println(F("write buffer to chips"));
             tlc.show();
@@ -338,28 +291,20 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.print(value);
             value = gsclock_set_frequency_MHz(value);
             out.print(F(" → "));
-            out.print(value);
-            out.println();
+            out.print(value, 4);
+            out.println(F("MHz"));
         } break;
         case 's': {
-            // set spi speed
-            // out.println(F("Set SPI speed in kHz"));
-            // float value = atof(&command[1]);
-            // out.print(value);
+            out.print(F("set spi baudrate in MHz - new value:"));
+            float value = atof(&command[1]);
+            out.print(value, 4);
+            out.println(F("MHz"));
+            tlc.spi_baudrate = value * 1000 * 1000;
             // out.print(F(" → "));
-            // uint32_t value_Hz = value * 1000;
-            // tlc.spi_baudrate = value_Hz;
-            // out.print(value_Hz);
-            // out.println();
-
-            // old syntax:
-            // out.println(F("Set SPI clockDivider"));
-            // uint8_t value = atoi(&command[1]);
-            // out.print(value);
-            // SPI.setClockDivider(value);
+            // out.print(tlc.spi_baudrate);
             // out.println();
         } break;
-        case 'b': {
+        case 't': {
             // get state
             out.println(F("SetBuffer:"));
             // for (size_t i = 0; i < tlc.PIXEL_PER_CHIP; i++) {
@@ -377,7 +322,8 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("--- old"));
             print_tlc_buffer(out);
             tlc.set_pixel_all_16bit_value(
-                0x0055, 0x0055, 0x0055);
+                0b11000110, 0b11000110, 0b11000110); // 198
+                // 0x0055, 0x0055, 0x0055);
                 // 0b01010101, 0b10101010, 0b10011001);
                 // 0x0055, 0x00AA, 0x0099);
                 // 85, 170, 153);
@@ -387,19 +333,32 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
         } break;
         case 'p': {
             // set pixel
-            out.println(F("Set Pixel"));
-            out.println(F("TODO"));
-            uint8_t value = atoi(&command[1]);
+            out.println(F("TODO!!!!!"));
+            out.print(F("Set pixel "));
+            // uint16_t index = atoi(&command[1]);
+            // out.print(index);
+            out.print("all");
+            out.print(F(" to "));
+            uint16_t value = atoi(&command[1]);
+            out.print(value);
+            tlc.set_pixel_all_16bit_value(value, value, value);
+            // tlc.set_pixel_16bit_value(index, value, value, value);
             out.println();
         } break;
         case 'P': {
+            out.print(F("Set all pixel to "));
+            uint16_t value = atoi(&command[1]);
+            tlc.set_pixel_all_16bit_value(value, value, value);
+            out.print(value);
+            out.println();
+        } break;
+        case 'b': {
             // set pixel
             out.println(F("Set all Pixel to black."));
             tlc.set_pixel_all_16bit_value(0, 0, 0);
             out.println();
         } break;
         case 'B': {
-            // set pixel
             out.println(F("Print Buffer:"));
             print_tlc_buffer(out);
             out.println();
@@ -419,36 +378,49 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
     // end Command Parser
 }
 
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TLC5957
 
 void tlc_init(Print &out) {
     out.println(F("setup tlc:")); {
-        out.println(F("tlc.begin()"));
+        out.println(F("  tlc.begin()"));
         tlc.begin();
 
-        out.println(F("tlc.pixel_count: "));
+        out.print(F("  tlc.pixel_count: "));
         out.print(tlc.pixel_count);
         out.println();
-        out.println(F("tlc.chip_count: "));
+        out.print(F("  tlc.chip_count: "));
         out.print(tlc.chip_count);
         out.println();
-        out.println(F("tlc.buffer_byte_count: "));
+        out.print(F("  tlc.buffer_byte_count: "));
         out.print(tlc.buffer_byte_count);
         out.println();
+        out.print(F("  tlc.spi_baudrate: "));
+        out.print(tlc.spi_baudrate);
+        out.println(F("Hz"));
+        out.print(F("  tlc.spi_baudrate: "));
+        out.print(tlc.spi_baudrate / 1000.0, 4);
+        out.println(F("kHz"));
+        // out.print(F("  tlc.spi_baudrate: "));
+        // out.print(tlc.spi_baudrate / (1000.0 * 1000.0), 4);
+        // out.println(F("MHz"));
+        out.print(F("  tlc.spi_baudrate: "));
+        out.print(tlc.spi_baudrate / float(1000 * 1000), 4);
+        out.println(F("MHz"));
     }
-    out.println(F("\t finished."));
+    out.println(F("  finished."));
 }
 
 
 void gsclock_init(Print &out) {
     out.println(F("init gsclock:")); {
-        out.println(F("init gsclock timer."));
+        out.println(F("  init gsclock timer."));
         setup_D9_10MHz();
-        out.println(F("set gsclock to 3MHz."));
+        out.println(F("  set gsclock to 3MHz."));
         gsclock_set_frequency_MHz(3.0);
     }
-    out.println(F("\t finished."));
+    out.println(F("  finished."));
 }
 
 
@@ -567,9 +539,21 @@ float gsclock_set_frequency_MHz(float frequency_MHz) {
 }
 
 
+float gsclock_get_frequency_MHz() {
+    uint8_t period_reg = get_D9_period_reg();
+    float frequency_MHz_result = (60.0 / 2) / (period_reg + 1);
+    return frequency_MHz_result;
+}
+
+
 void set_D9_period_reg(uint8_t period_reg) {
     TC3->COUNT8.CC[0].reg = period_reg;
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
+}
+
+
+uint8_t get_D9_period_reg() {
+    return TC3->COUNT8.CC[0].reg;
 }
 
 
@@ -584,11 +568,11 @@ void print_tlc_buffer(Print &out) {
 
 void animation_init(Print &out) {
     out.println(F("init animation:")); {
-        out.println(F("animation_interval: "));
+        out.print(F("  animation_interval: "));
         out.print(animation_interval);
         out.println();
     }
-    out.println(F("\t finished."));
+    out.println(F("  finished."));
 }
 
 
@@ -628,25 +612,20 @@ void setup() {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // initialise serial
 
-        // for ATmega32U4 devices:
-        #if defined (__AVR_ATmega32U4__)
-            // wait for arduino IDE to release all serial ports after upload.
-            delay(2000);
-        #endif
-
+        // wait for arduino IDE to release all serial ports after upload.
+        delay(1000);
+        // initialise serial
         Serial.begin(115200);
 
-        // Wait for Serial Connection to be Opend from Host
-        // or timeout after some seconds
+        // Wait for Serial Connection to be Opend from Host or
+        // timeout after 6second
         uint32_t timeStamp_Start = millis();
-        while( (! Serial) && ( (millis() - timeStamp_Start) < 3000 ) ) {
+        while( (! Serial) && ( (millis() - timeStamp_Start) < 2000 ) ) {
             // nothing to do
         }
 
         Serial.println();
-
-        Serial.print(F("# Free RAM = "));
-        Serial.println(freeRam());
+        Serial.println();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // print welcome
@@ -655,9 +634,6 @@ void setup() {
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // setup TLC5957
-
-        Serial.print(F("# Free RAM = "));
-        Serial.println(freeRam());
 
         tlc_init(Serial);
         gsclock_init(Serial);
@@ -703,8 +679,6 @@ void loop() {
             if ( debugOut_LiveSign_Serial_Enabled ) {
                 Serial.print(millis());
                 Serial.print(F("ms;"));
-                Serial.print(F("  free RAM = "));
-                Serial.println(freeRam());
             }
 
             if ( debugOut_LiveSign_LED_Enabled ) {

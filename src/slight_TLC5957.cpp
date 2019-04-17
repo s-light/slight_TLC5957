@@ -208,6 +208,10 @@ slight_TLC5957::slight_TLC5957(
     _spi_miso(spi_miso
 ) {
     ready = false;
+    // 1kHz
+    // spi_baudrate = (1 *    1 *  1000);
+    // 4MHz
+    spi_baudrate = (4 * 1000 *  1000);
 }
 
 slight_TLC5957::~slight_TLC5957() {
@@ -229,8 +233,6 @@ void slight_TLC5957::begin() {
         pinMode(_spi_mosi, OUTPUT);
         pinMode(_spi_clock, OUTPUT);
         SPI.begin();
-        // SPI.beginTransaction(SPISettings(10 * 1000000, MSBFIRST, SPI_MODE0));
-        SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
 
         // _init_buffer_fc();
         // update_fc();
@@ -238,6 +240,9 @@ void slight_TLC5957::begin() {
         // write initial 0 values
         // show();
         // show();
+        Serial.print(F("TLC5957 begin → spi_baudrate: "));
+        Serial.print(spi_baudrate);
+        Serial.println(F("Hz"));
     }
 }
 
@@ -257,7 +262,8 @@ void slight_TLC5957::_write_buffer_GS() {
 
     for (uint8_t pixel_index = 0; pixel_index < PIXEL_PER_CHIP; pixel_index++) {
         // configure
-        SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+        // SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings((500), MSBFIRST, SPI_MODE0));
         // write GS data for all chips -1*16bit
         // the transfer functions in buffer mode
         // overwrite to the buffer with what comes back in :-(
@@ -296,7 +302,8 @@ void slight_TLC5957::_write_buffer_FC() {
         _FC__FCWRTEN, buffer_start, _buffer_fc);
 
     // configure
-    SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+    // SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings((500), MSBFIRST, SPI_MODE0));
     // write FC data for all chips -1*16bit
     // the transfer functions in buffer mode
     // overwrite to the buffer with what comes back in :-(
