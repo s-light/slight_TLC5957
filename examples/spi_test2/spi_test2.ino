@@ -1,6 +1,6 @@
 /******************************************************************************
 
-    spi_test.ino
+    spi_test2.ino
         test spi settings on SAMD51
         debugout on usbserial interface: 115200baud
 
@@ -69,7 +69,7 @@ void sketchinfo_print(Print &out) {
     out.println(F("|                      ( _ )                     |"));
     out.println(F("|                       \" \"                      |"));
     out.println(F("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"));
-    out.println(F("| spi_test.ino"));
+    out.println(F("| spi_test2.ino"));
     out.println(F("|   test spi settings on SAMD51"));
     out.println(F("|"));
     out.println(F("| This Sketch has a debug-menu:"));
@@ -105,8 +105,8 @@ void sketchinfo_print(Print &out) {
     // __DATE__ Nov 11 2013
     // __TIME__ 20:35:04
     // __TIMESTAMP__ Tue Dec 27 14:14:04 2016
-    // __FILE__  /home/stefan/mydata/arduino_sketchbook/libraries/slight_TLC5957/examples/spi_test/spi_test.ino
-    // __BASE_FILE__ /tmp/arduino_build_330237/sketch/spi_test.ino.cpp
+    // __FILE__  /home/stefan/mydata/arduino_sketchbook/libraries/slight_TLC5957/examples/spi_test/spi_test2.ino
+    // __BASE_FILE__ /tmp/arduino_build_330237/sketch/spi_test2.ino.cpp
 
 }
 
@@ -137,18 +137,23 @@ slight_DebugMenu myDebugMenu(Serial, Serial, 15);
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // SPI
 
+// 1Hz
+// uint32_t spi_baudrate = 1;
 // 100Hz
-// uint32_t spi_baudrate = (0.001 * 1000 *  1000);
+uint32_t spi_baudrate = (0.0001 * 1000 *  1000);
 // 0.28MHz
-uint32_t spi_baudrate = (0.28 * 1000 *  1000);
+// uint32_t spi_baudrate = (0.28 * 1000 *  1000);
 
-uint8_t latch_pin = 7;
+uint8_t _latch = 7;
+uint8_t _spi_clock = SCK;
+uint8_t _spi_mosi = MOSI;
+uint8_t _spi_miso = MISO;
 
-bool animation_run = true;
+bool animation_run = false;
 
 unsigned long animation_timestamp = 0;
 //uint16_t animation_interval = 1000; //ms
-uint16_t animation_interval = 0; //ms
+uint16_t animation_interval = 10; //ms
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -184,6 +189,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("\t 'Y': toggle DebugOut livesign LED"));
             out.println(F("\t 'x': tests"));
             out.println();
+            out.println(F("\t 'u': tlc_show() 'u'"));
             out.print(F("\t 'r': toggle animation_run 'r' ("));
             out.print(animation_run);
             out.println(F(")"));
@@ -217,6 +223,10 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("Tests:"));
             out.println(F("nothing to do."));
             out.println(F("__________"));
+        } break;
+        case 'u': {
+            out.println(F("tlc_show()"));
+            tlc_show();
         } break;
         case 'r': {
             out.println(F("toggle animation_run"));
@@ -262,8 +272,8 @@ void spi_init(Print &out) {
         out.println(F("  SPI.begin()"));
         SPI.begin();
         out.println(F("  setup latch pin"));
-        pinMode(latch_pin, OUTPUT);
-        digitalWrite(latch_pin, LOW);
+        pinMode(_latch, OUTPUT);
+        digitalWrite(_latch, LOW);
     }
     out.println(F("  finished."));
 }
@@ -281,18 +291,103 @@ void animation_update() {
     if ((millis() - animation_timestamp) > animation_interval) {
         animation_timestamp = millis();
         if (animation_run) {
-            digitalWrite(latch_pin, HIGH);
-            SPI.beginTransaction(
-                SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
-            SPI.transfer(0b01010101);
-            SPI.transfer(0b00000000);
-            SPI.transfer(0b01010101);
-            SPI.transfer(0b11111111);
-            SPI.transfer(0b01010101);
-            SPI.endTransaction();
-            digitalWrite(latch_pin, LOW);
+            tlc_show();
         }
     }
+}
+
+
+
+void tlc_show() {
+    // write_SPI_minimal();
+    write_SPI_TLC();
+}
+
+void write_SPI_minimal() {
+    digitalWrite(_latch, HIGH);
+    SPI.beginTransaction(
+        SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+    SPI.transfer(0b01010101);
+    SPI.transfer(0b00000000);
+    SPI.transfer(0b01010101);
+    SPI.transfer(0b11111111);
+    SPI.transfer(0b01010101);
+    SPI.endTransaction();
+    digitalWrite(_latch, LOW);
+}
+
+void write_SPI_TLC() {
+    const uint8_t PIXEL_PER_CHIP = 16;
+    const uint8_t _FC__WRTGS = 1;
+    const uint8_t _FC__LATGS = 3;
+
+    uint16_t write_count = 6 - 2;
+    for (uint8_t pixel_index = 0; pixel_index < PIXEL_PER_CHIP; pixel_index++) {
+        // configure
+        SPI.begin();
+        SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+        for (uint16_t byte_index = 0; byte_index < write_count; byte_index++) {
+            SPI.transfer(0b00101011);
+        }
+        SPI.endTransaction();
+        SPI.end();
+        // special
+        // digitalWrite(_latch, HIGH);
+        // SPI.beginTransaction(SPISettings(1, MSBFIRST, SPI_MODE0));
+        // SPI.transfer(0b01000111);
+        // SPI.transfer(0b01000111);
+        // SPI.endTransaction();
+        // digitalWrite(_latch, LOW);
+        if (pixel_index == (PIXEL_PER_CHIP - 1)) {
+            _write_buffer_with_function_command(
+                _FC__LATGS, 0xffAA);
+        } else {
+            _write_buffer_with_function_command(
+                _FC__WRTGS, 0x55ff);
+        }
+    }
+}
+
+
+void _write_buffer_with_function_command(
+    uint8_t function_command,
+    uint16_t value
+) {
+    // """Bit-Banging SPI write to sync with latch pulse."""
+
+    // faster speeds with direct port access:
+    // https://forum.arduino.cc/index.php?topic=4324.0
+
+    pinMode(_spi_mosi, OUTPUT);
+    pinMode(_spi_clock, OUTPUT);
+
+    digitalWrite(_spi_clock, LOW);
+    digitalWrite(_spi_mosi, LOW);
+    digitalWrite(_latch, LOW);
+
+    const uint8_t CHIP_FUNCTION_CMD_BIT_COUNT = 16;
+
+    uint8_t latch_start_index = CHIP_FUNCTION_CMD_BIT_COUNT - function_command;
+
+    for (uint8_t i = 0; i < CHIP_FUNCTION_CMD_BIT_COUNT; i++) {
+        if (latch_start_index == i) {
+            digitalWrite(_latch, HIGH);
+        }
+
+        // b1000000000000000
+        if (value & 0x8000u) {
+            digitalWrite(_spi_mosi, HIGH);
+        } else {
+            digitalWrite(_spi_mosi, LOW);
+        }
+        value <<= 1;
+
+        digitalWrite(_spi_clock, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(_spi_clock, LOW);
+    }
+
+    digitalWrite(_latch, LOW);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

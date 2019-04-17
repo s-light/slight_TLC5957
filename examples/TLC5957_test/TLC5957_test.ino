@@ -166,7 +166,7 @@ const uint8_t pixel_count = 16;
 slight_TLC5957 tlc = slight_TLC5957(pixel_count);
 
 
-bool animation_run = false;
+bool animation_run = true;
 
 unsigned long animation_timestamp = 0;
 //uint16_t animation_interval = 1000; //ms
@@ -307,22 +307,11 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
         case 't': {
             // get state
             out.println(F("SetBuffer:"));
-            // for (size_t i = 0; i < tlc.PIXEL_PER_CHIP; i++) {
-            //     tlc.buffer[(i*3) + 0] = 0x0055;
-            //     tlc.buffer[(i*3) + 1] = 0x00AA;
-            //     tlc.buffer[(i*3) + 2] = 0x00ff;
-            // }
-            // for (size_t i = 0; i < tlc.buffer_byte_count; i++) {
-            //     tlc.buffer[i] = 0x5555;
-            //     tlc.buffer[i] = 0x5555;
-            // }
-            // for (size_t i = 0; i < tlc.pixel_count; i++) {
-            //     tlc.set_pixel_16bit_value(i, 0b01010101, 0b10101010, 0b10011001);
-            // }
             out.println(F("--- old"));
             print_tlc_buffer(out);
             tlc.set_pixel_all_16bit_value(
-                0b11000110, 0b11000110, 0b11000110); // 198
+                255, 1, 127);
+                // 0b11000110, 0b11000110, 0b11000110); // 198
                 // 0x0055, 0x0055, 0x0055);
                 // 0b01010101, 0b10101010, 0b10011001);
                 // 0x0055, 0x00AA, 0x0099);
@@ -386,6 +375,9 @@ void tlc_init(Print &out) {
     out.println(F("setup tlc:")); {
         out.println(F("  tlc.begin()"));
         tlc.begin();
+
+        // 0.28MHz
+        tlc.spi_baudrate = 0.28 * 1000 * 1000;
 
         out.print(F("  tlc.pixel_count: "));
         out.print(tlc.pixel_count);
@@ -558,10 +550,38 @@ uint8_t get_D9_period_reg() {
 
 
 void print_tlc_buffer(Print &out) {
-    slight_DebugMenu::print_uint16_array(
-        out,
-        reinterpret_cast<uint16_t *>(tlc.buffer),
-        tlc.buffer_byte_count / 2);
+    uint16_t *buffer = reinterpret_cast<uint16_t *>(tlc.buffer);
+    char color_names[][6] = {
+        "index",
+        "red  ",
+        "green",
+        "blue ",
+    };
+    // print pixel index
+    out.print(color_names[0]);
+    out.print(F(" "));
+    uint8_t index = 0;
+    slight_DebugMenu::print_uint16_align_right(out, index);
+    for (index = 1; index < tlc.pixel_count; index++) {
+        out.print(F(", "));
+        slight_DebugMenu::print_uint16_align_right(out, index);
+    }
+    out.println();
+    // print data
+    for (size_t color_i = 0; color_i < tlc.COLORS_PER_PIXEL; color_i++) {
+        uint16_t offset = color_i * tlc.COLORS_PER_PIXEL;
+        out.print(color_names[color_i + 1]);
+        out.print(F(" "));
+        index = 0;
+        slight_DebugMenu::print_uint16_align_right(
+            out, buffer[offset + index]);
+        for (index = 1; index < tlc.pixel_count; index++) {
+            out.print(F(", "));
+            slight_DebugMenu::print_uint16_align_right(
+                out, buffer[offset + index]);
+        }
+        out.println();
+    }
 }
 
 

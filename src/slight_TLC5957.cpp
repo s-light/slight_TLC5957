@@ -262,8 +262,8 @@ void slight_TLC5957::_write_buffer_GS() {
 
     for (uint8_t pixel_index = 0; pixel_index < PIXEL_PER_CHIP; pixel_index++) {
         // configure
-        // SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
-        SPI.beginTransaction(SPISettings((500), MSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+        // SPI.beginTransaction(SPISettings((100), MSBFIRST, SPI_MODE0));
         // write GS data for all chips -1*16bit
         // the transfer functions in buffer mode
         // overwrite to the buffer with what comes back in :-(
@@ -302,8 +302,8 @@ void slight_TLC5957::_write_buffer_FC() {
         _FC__FCWRTEN, buffer_start, _buffer_fc);
 
     // configure
-    // SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
-    SPI.beginTransaction(SPISettings((500), MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
+    // SPI.beginTransaction(SPISettings((100), MSBFIRST, SPI_MODE0));
     // write FC data for all chips -1*16bit
     // the transfer functions in buffer mode
     // overwrite to the buffer with what comes back in :-(
