@@ -131,7 +131,7 @@ boolean debugOut_LiveSign_LED_Enabled = 1;
 slight_TLC5957 tlc = slight_TLC5957(2*16);
 
 
-void setup_D9_1MHz() {
+void setup_D9_10MHz() {
 
     // Activate timer TC3
     // CLK_TC3_APB
@@ -202,9 +202,11 @@ void setup_D9_1MHz() {
     //   0 = 30.0MHz
     //   1 = 15.0MHz
     //   2 = 10.0MHz
-    //  29 =  1.0MHz
-    // start with 1MHz
-    TC3->COUNT8.CC[0].reg = 29;
+    //   5 =  5.0MHz
+    //   9 =  3.0MHz → minimum for smooth if not ESPWM
+    //  29 =  1.0MHz → if not ESPWM this already leads to visible flickering
+    // start with 3MHz
+    TC3->COUNT8.CC[0].reg = 2;
     // Wait for synchronization
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
 
@@ -233,7 +235,7 @@ uint8_t step = 0;
 
 void tlc_init(Print &out) {
     out.println(F("setup tlc:")); {
-        setup_D9_1MHz();
+        setup_D9_10MHz();
         tlc.begin();
     }
     out.println(F("\t finished."));

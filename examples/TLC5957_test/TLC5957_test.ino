@@ -161,9 +161,18 @@ slight_DebugMenu myDebugMenu(Serial, Serial, 15);
 //     uint8_t sout_pin = MOSI,
 //     uint8_t sin_pin = MISO
 // );
+const uint8_t pixel_count = 16;
 // use default pins
-slight_TLC5957 tlc = slight_TLC5957(2);
+slight_TLC5957 tlc = slight_TLC5957(pixel_count);
 
+
+bool tlc_show = false;
+
+unsigned long animation_timestamp = 0;
+// const uint16_t animation_interval = 1000; //ms
+const uint16_t animation_interval = 20; //ms
+
+uint8_t step = 0;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // functions
@@ -176,9 +185,14 @@ slight_TLC5957 tlc = slight_TLC5957(2);
 // http://forum.arduino.cc/index.php?topic=183790.msg1362282#msg1362282
 // posted by mrburnette
 int freeRam () {
-  // extern int __heap_start, *__brkval;
-  // int v;
-  // return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+    // for ATmega32U4 devices:
+    #if defined (__AVR__)
+        extern int __heap_start, *__brkval;
+        int v;
+        return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+    #else
+        return 0;
+    #endif
 }
 
 
@@ -211,9 +225,13 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println();
             // out.println();
             // out.println(F("\t 'f': test fc 'f'"));
-            out.println(F("\t 'u': update 'u'"));
-            out.println(F("\t 'b': set buffer 'b'"));
+            out.println(F("\t 'u': tlc.show() 'u'"));
+            out.println(F("\t 'U': toggle tlc.show 'U'"));
             out.println(F("\t 'g': set grayscale frequency in MHz 'g:1.0'"));
+            // out.println(F("\t 's': set spi frequency in kHz 's:1.0'"));
+            out.println(F("\t 'B': print Buffer 'B'"));
+            out.println(F("\t 'b': set buffer 'b'"));
+            out.println(F("\t 'p': set pixel 'p0:255'"));
             out.println();
             out.println(F("____________________________________________________________"));
         } break;
@@ -297,6 +315,15 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
         //         } break;
         //     }
         // } break;
+        case 'u': {
+            out.println(F("write buffer to chips"));
+            tlc.show();
+        } break;
+        case 'U': {
+            // get state
+            out.println(F("toggle tlc_show"));
+            tlc_show = !tlc_show;
+        } break;
         case 'g': {
             out.print(F("set grayscale frequency - new value:"));
             float value = atof(&command[1]);
@@ -306,22 +333,61 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.print(value);
             out.println();
         } break;
+        case 's': {
+            // set spi speed
+            // out.println(F("Set SPI speed in kHz"));
+            // float value = atof(&command[1]);
+            // out.print(value);
+            // out.print(F(" → "));
+            // uint32_t value_Hz = value * 1000;
+            // tlc.spi_baudrate = value_Hz;
+            // out.print(value_Hz);
+            // out.println();
+            out.println(F("Set SPI clockDivider"));
+            uint8_t value = atoi(&command[1]);
+            out.print(value);
+            SPI.setClockDivider(value);
+            out.println();
+        } break;
         case 'b': {
             // get state
-            out.println(F("SetBuffer"));
-            for (size_t i = 0; i < tlc.led_per_chip_count; i++) {
-                tlc.buffer[(i*3) + 0] = 0x0055;
-                tlc.buffer[(i*3) + 1] = 0x00AA;
-                tlc.buffer[(i*3) + 2] = 0x00ff;
-            }
+            out.println(F("SetBuffer:"));
+            // for (size_t i = 0; i < tlc.PIXEL_PER_CHIP; i++) {
+            //     tlc.buffer[(i*3) + 0] = 0x0055;
+            //     tlc.buffer[(i*3) + 1] = 0x00AA;
+            //     tlc.buffer[(i*3) + 2] = 0x00ff;
+            // }
+            // for (size_t i = 0; i < tlc.buffer_byte_count; i++) {
+            //     tlc.buffer[i] = 0x5555;
+            //     tlc.buffer[i] = 0x5555;
+            // }
+            // for (size_t i = 0; i < tlc.pixel_count; i++) {
+            //     tlc.set_pixel_16bit_value(i, 0b01010101, 0b10101010, 0b10011001);
+            // }
+            out.println(F("--- old"));
+            slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
+            tlc.set_pixel_all_16bit_value(
+                0x0055, 0x0055, 0x0055);
+                // 0b01010101, 0b10101010, 0b10011001);
+                // 0x0055, 0x00AA, 0x0099);
+                // 85, 170, 153);
+            out.println(F("--- new"));
+            slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
+            out.println();
+        } break;
+        case 'p': {
+            // set pixel
+            out.println(F("Set Pixel"));
+            out.println(F("TODO"));
 
             slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
             out.println();
         } break;
-        case 'u': {
-            // get state
-            out.println(F("update"));
-            tlc.update();
+        case 'B': {
+            // set pixel
+            out.println(F("Print Buffer:"));
+            slight_DebugMenu::print_uint16_array(out, tlc.buffer, tlc.buffer_byte_count/2);
+            out.println();
         } break;
         //---------------------------------------------------------------------
         default: {
@@ -352,13 +418,13 @@ void tlc_init(Print &out) {
 
 void gsclock_init(Print &out) {
     out.println(F("setup gsclock:")); {
-        setup_D9_1MHz();
+        setup_D9_10MHz();
     }
     out.println(F("\t finished."));
 }
 
 
-void setup_D9_1MHz() {
+void setup_D9_10MHz() {
 
     // Activate timer TC3
     // CLK_TC3_APB
@@ -440,8 +506,8 @@ void setup_D9_1MHz() {
     //  99 =  0.3MHz
     // 149 =  0.2MHz
     // 255 =  0.11MHz
-    // start with 1MHz
-    TC3->COUNT8.CC[0].reg = 29;
+    // start with 10MHz
+    TC3->COUNT8.CC[0].reg = 2;
     // Wait for synchronization
     while (TC3->COUNT8.SYNCBUSY.bit.CC1);
 
@@ -478,6 +544,23 @@ void set_D9_period_reg(uint8_t period_reg) {
 }
 
 
+void update_test() {
+    if ((millis() - animation_timestamp) > animation_interval) {
+        animation_timestamp = millis();
+        // tlc.set_pixel_16bit_value(step, 0, 0, 500);
+        // step += 1;
+        // // Serial.print("step:");
+        // // Serial.println(step);
+        // if (step >= tlc.pixel_count) {
+        //     step = 0;
+        //     Serial.println("step wrap around.");
+        //     tlc.set_pixel_all_16bit_value(0, 0, 0);
+        // }
+        if (tlc_show) {
+            tlc.show();
+        }
+    }
+}
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -504,15 +587,12 @@ void setup() {
 
         Serial.begin(115200);
 
-        // for ATmega32U4 devices:
-        #if defined (__AVR_ATmega32U4__)
-            // Wait for Serial Connection to be Opend from Host or
-            // timeout after 6second
-            uint32_t timeStamp_Start = millis();
-            while( (! Serial) && ( (millis() - timeStamp_Start) < 6000 ) ) {
-                // nothing to do
-            }
-        #endif
+        // Wait for Serial Connection to be Opend from Host
+        // or timeout after some seconds
+        uint32_t timeStamp_Start = millis();
+        while( (! Serial) && ( (millis() - timeStamp_Start) < 3000 ) ) {
+            // nothing to do
+        }
 
         Serial.println();
 
@@ -555,6 +635,11 @@ void loop() {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // menu input
         myDebugMenu.update();
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // test things
+
+        update_test();
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // debug output

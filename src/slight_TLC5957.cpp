@@ -230,14 +230,14 @@ void slight_TLC5957::begin() {
         pinMode(_spi_clock, OUTPUT);
         SPI.begin();
         // SPI.beginTransaction(SPISettings(10 * 1000000, MSBFIRST, SPI_MODE0));
-        SPI.beginTransaction(SPISettings(1 * 1000000, MSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings(spi_baudrate, MSBFIRST, SPI_MODE0));
 
         // _init_buffer_fc();
         // update_fc();
 
         // write initial 0 values
-        show();
-        show();
+        // show();
+        // show();
     }
 }
 

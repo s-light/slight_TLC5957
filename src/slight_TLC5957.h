@@ -380,7 +380,7 @@ public:
     void set_pixel_float_value(
         uint16_t pixel_index, float value_r, float value_g, float value_b
     );
-    
+
     // set_pixel_16bit_color(self, pixel_index, color)
     // set_pixel_float_color(self, pixel_index, color)
     // set_pixel(self, pixel_index, value)
@@ -396,12 +396,18 @@ public:
 
     void set_channel(uint16_t channel_index, uint16_t value);
 
+    // uint32_t spi_baudrate = (1 *    1 *  100);
+
 private:
 
+    // 100Hz
+    const uint32_t spi_baudrate = (1 *    1 *  100);
+    // 1kHz
+    // const uint32_t spi_baudrate = (1 *    1 * 1000);
     // 10kHz
     // const uint32_t spi_baudrate = (1 *   10 * 1000);
     // 1MHz
-    const uint32_t spi_baudrate = (1 * 1000 * 1000);
+    // const uint32_t spi_baudrate = (1 * 1000 * 1000);
     // 10MHz
     // const uint32_t spi_baudrate = (10 * 1000 * 1000);
 
