@@ -30,7 +30,7 @@
 /******************************************************************************
     The MIT License (MIT)
 
-    Copyright (c) 2018 Stefan Krüger
+    Copyright (c) 2019 Stefan Krüger
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -78,7 +78,7 @@ void sketchinfo_print(Print &out) {
     out.println(F("|                       \" \"                      |"));
     out.println(F("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"));
     out.println(F("| TLC5957_dev.ino"));
-    out.println(F("|   some development test for slight_TLC5957 library."));
+    out.println(F("|   development things for slight_TLC5957 library."));
     out.println(F("|"));
     out.println(F("| This Sketch has a debug-menu:"));
     out.println(F("| send '?'+Return for help"));
@@ -146,7 +146,7 @@ boolean debugOut_LiveSign_LED_Enabled = 1;
 // Menu
 
 // slight_DebugMenu(Stream &in_ref, Print &out_ref, uint8_t input_length_new);
-slight_DebugMenu myDebugMenu(Serial, Serial, 15);
+slight_DebugMenu myDebugMenu(Serial, Serial, 20);
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,7 +161,7 @@ slight_DebugMenu myDebugMenu(Serial, Serial, 15);
 //     uint8_t sout_pin = MOSI,
 //     uint8_t sin_pin = MISO
 // );
-const uint8_t pixel_count = 16;
+const uint8_t pixel_count = 1*16;
 // use default pins
 slight_TLC5957 tlc = slight_TLC5957(pixel_count);
 
@@ -213,6 +213,9 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.print(F("\t 'r': toggle animation_run 'r' ("));
             out.print(animation_run);
             out.println(F(")"));
+            out.print(F("\t 'e': toggle ESPWM 'e' ("));
+            out.print(tlc.get_fc_ESPWM());
+            out.println(F(")"));
             out.print(F("\t 'a': set animation_interval 'a1000' ("));
             out.print(animation_interval);
             out.println(F("ms)"));
@@ -228,6 +231,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("\t 'z': set all pixel to 21845 'z'"));
             out.println(F("\t 'b': set all pixel to black 'b'"));
             out.println(F("\t 'B': print Buffer 'B'"));
+            out.println(F("\t 'F': print buffer_fc 'F'"));
             out.println();
             out.println(F("____________________________________________________________"));
         } break;
@@ -268,18 +272,69 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // out.println();
             //
             // out.println();
-            uint8_t buffer_count = 8;
-            uint8_t buffer[] = {0, 1,  0, 255,  127, 0,  255, 255};
-            // as 16bit:           1,     255,   32512,     65535
 
-            out.println(F("buffer as 8x uint8_t: "));
-            slight_DebugMenu::print_uint8_array(
-                out, buffer, buffer_count);
+
+            // uint8_t buffer_count = 8;
+            // uint8_t buffer[] = {0, 1,  0, 255,  127, 0,  255, 255};
+            // // as 16bit:           1,     255,   32512,     65535
+            //
+            // out.println(F("buffer as 8x uint8_t: "));
+            // slight_DebugMenu::print_uint8_array(
+            //     out, buffer, buffer_count);
+            // out.println();
+            // uint16_t *buf = reinterpret_cast<uint16_t*>(buffer);
+            // out.println(F("buffer as 4x uint16_t: "));
+            // slight_DebugMenu::print_uint16_array(
+            //     out, buf, buffer_count/2);
+            // out.println();
+
+            uint8_t buffer[12] = {
+                0b00000001, 0b00000011, 0b00000001, 0b01110001, 0b00000001, 0b01111001,
+                0b00000001, 0b00000011, 0b00000001, 0b01110001, 0b00000001, 0b01111001,
+            };
+            // uint8_t buffer[12] = (
+            //     (0b000000010000000100000001000000010000000100000001 << 6) |
+            //      0b000000010000000100000001000000010000000100000001
+            // );
+            out.println(F("buffer as 12x uint8_t: "));
+            slight_DebugMenu::print_uint8_array(out, buffer, 12);
             out.println();
-            uint16_t *buf = reinterpret_cast<uint16_t*>(buffer);
-            out.println(F("buffer as 4x uint16_t: "));
-            slight_DebugMenu::print_uint16_array(
-                out, buf, buffer_count/2);
+            out.println(F("buffer as bin: "));
+            out.print(F("p1: "));
+            uint8_t buffer_start = 0;
+            uint64_t value = (
+                ((uint64_t)buffer[buffer_start + 0] << 40) |
+                ((uint64_t)buffer[buffer_start + 1] << 32) |
+                ((uint64_t)buffer[buffer_start + 2] << 24) |
+                ((uint64_t)buffer[buffer_start + 3] << 16) |
+                ((uint64_t)buffer[buffer_start + 4] <<  8) |
+                 (uint64_t)buffer[buffer_start + 5]);
+            for (uint64_t mask = ((uint64_t)1 << 47); mask; mask >>= 1) {
+                // check if this bit is set
+                if (mask & value) {
+                    out.print('1');
+                } else {
+                    out.print('0');
+                }
+            }
+            out.println();
+            out.print(F("p1: "));
+            buffer_start = 6;
+            value = (
+                ((uint64_t)buffer[buffer_start + 0] << 40) |
+                ((uint64_t)buffer[buffer_start + 1] << 32) |
+                ((uint64_t)buffer[buffer_start + 2] << 24) |
+                ((uint64_t)buffer[buffer_start + 3] << 16) |
+                ((uint64_t)buffer[buffer_start + 4] <<  8) |
+                 (uint64_t)buffer[buffer_start + 5]);
+            for (uint64_t mask = ((uint64_t)1 << 47); mask; mask >>= 1) {
+                // check if this bit is set
+                if (mask & value) {
+                    out.print('1');
+                } else {
+                    out.print('0');
+                }
+            }
             out.println();
 
 
@@ -292,6 +347,11 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
         case 'r': {
             out.println(F("toggle animation_run"));
             animation_run = !animation_run;
+        } break;
+        case 'e': {
+            out.println(F("toggle ESPWM"));
+            tlc.set_fc_ESPWM_all(!tlc.get_fc_ESPWM());
+            tlc.update_fc();
         } break;
         case 'a': {
             out.println(F("set animation interval:"));
@@ -400,6 +460,11 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             print_tlc_buffer(out);
             out.println();
         } break;
+        case 'F': {
+            out.println(F("Print buffer_fc:"));
+            tlc.print_buffer_fc(out);
+            out.println();
+        } break;
         //---------------------------------------------------------------------
         default: {
             if(strlen(command) > 0) {
@@ -450,6 +515,10 @@ void tlc_init(Print &out) {
         out.print(F("  tlc.spi_baudrate: "));
         out.print(tlc.spi_baudrate / float(1000 * 1000), 4);
         out.println(F("MHz"));
+
+        out.print(F("  tlc.get_fc_ESPWM(): "));
+        out.print(tlc.get_fc_ESPWM());
+        out.println();
     }
     out.println(F("  finished."));
 }
@@ -653,6 +722,8 @@ void print_tlc_buffer(Print &out) {
 }
 
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// animation
 
 void animation_init(Print &out) {
     out.println(F("init animation:")); {
@@ -660,12 +731,13 @@ void animation_init(Print &out) {
         out.print(animation_interval);
         out.println();
 
-        out.println(F("  Set all Pixel to 21845."));
-        tlc.set_pixel_all_16bit_value(21845, 21845, 21845);
+        // out.println(F("  Set all Pixel to 21845."));
+        // tlc.set_pixel_all_16bit_value(21845, 21845, 21845);
+        out.println(F("  Set all Pixel to red=blue=1."));
+        tlc.set_pixel_all_16bit_value(1, 0, 1);
     }
     out.println(F("  finished."));
 }
-
 
 
 void animation_update() {

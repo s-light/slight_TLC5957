@@ -238,12 +238,13 @@ void slight_TLC5957::begin() {
         // pinMode(_spi_mosi, OUTPUT);
         // pinMode(_spi_clock, OUTPUT);
 
-        // _init_buffer_fc();
-        // update_fc();
+        _init_buffer_fc();
+        update_fc();
 
         // write initial 0 values
-        // show();
-        // show();
+        show();
+        show();
+
         // Serial.print(F("TLC5957 begin → spi_baudrate: "));
         // Serial.print(spi_baudrate);
         // Serial.println(F("Hz"));
@@ -394,14 +395,14 @@ void slight_TLC5957::update_fc() {
 uint64_t slight_TLC5957::_get_48bit_value_from_buffer(
     uint8_t *buffer, uint16_t buffer_start
 ) {
-    return (uint64_t)buffer[buffer_start] & 0xFFFFFFFFFFFF;
-    // return (
-    //     (buffer[buffer_start + 0] << 40) |
-    //     (buffer[buffer_start + 1] << 32) |
-    //     (buffer[buffer_start + 2] << 24) |
-    //     (buffer[buffer_start + 3] << 16) |
-    //     (buffer[buffer_start + 4] <<  8) |
-    //      buffer[buffer_start + 5]);
+    // return (uint64_t)buffer[buffer_start] & 0xFFFFFFFFFFFF;
+    return (
+        ((uint64_t)buffer[buffer_start + 0] << 40) |
+        ((uint64_t)buffer[buffer_start + 1] << 32) |
+        ((uint64_t)buffer[buffer_start + 2] << 24) |
+        ((uint64_t)buffer[buffer_start + 3] << 16) |
+        ((uint64_t)buffer[buffer_start + 4] <<  8) |
+         (uint64_t)buffer[buffer_start + 5]);
 }
 
 void slight_TLC5957::_set_48bit_value_in_buffer(
@@ -411,14 +412,15 @@ void slight_TLC5957::_set_48bit_value_in_buffer(
     if (value <= 0xFFFFFFFFFFFF) {
         // print("buffer_start", buffer_start, "value", value)
         // self._debug_print_buffer()
-        buffer[buffer_start] = value & 0xFFFFFFFFFFFF;
-        // buffer[buffer_start + 0] = (value >> 40) & 0xFF;
-        // buffer[buffer_start + 1] = (value >> 32) & 0xFF;
-        // buffer[buffer_start + 2] = (value >> 24) & 0xFF;
-        // buffer[buffer_start + 3] = (value >> 16) & 0xFF;
-        // buffer[buffer_start + 4] = (value >>  8) & 0xFF;
-        // buffer[buffer_start + 5] = value         & 0xFF;
+        // buffer[buffer_start] = value & 0xFFFFFFFFFFFF;
+        buffer[buffer_start + 0] = (value >> 40) & 0xFF;
+        buffer[buffer_start + 1] = (value >> 32) & 0xFF;
+        buffer[buffer_start + 2] = (value >> 24) & 0xFF;
+        buffer[buffer_start + 3] = (value >> 16) & 0xFF;
+        buffer[buffer_start + 4] = (value >>  8) & 0xFF;
+        buffer[buffer_start + 5] = value         & 0xFF;
     }
+
     // else {
     //     raise ValueError(
     //         "value {} not in range: 0..0xFFFFFFFF"
@@ -551,6 +553,31 @@ void slight_TLC5957::_init_buffer_fc() {
 void slight_TLC5957::print_buffer_fc(Print &out) {
     // TODO(s-light): find a nice way to print this..
     out.println("print_buffer_fc → TODO....");
+
+    for (size_t chip_index = 0; chip_index < chip_count; chip_index++) {
+        out.print("chip ");
+        out.print(chip_index);
+        out.print(": ");
+        uint8_t buffer_start = 0;
+        uint64_t value = (
+            ((uint64_t)_buffer_fc[buffer_start + 0] << 40) |
+            ((uint64_t)_buffer_fc[buffer_start + 1] << 32) |
+            ((uint64_t)_buffer_fc[buffer_start + 2] << 24) |
+            ((uint64_t)_buffer_fc[buffer_start + 3] << 16) |
+            ((uint64_t)_buffer_fc[buffer_start + 4] <<  8) |
+            (uint64_t)_buffer_fc[buffer_start + 5]);
+            for (uint64_t mask = ((uint64_t)1 << 47); mask; mask >>= 1) {
+                // check if this bit is set
+                if (mask & value) {
+                    out.print('1');
+                } else {
+                    out.print('0');
+                }
+            }
+            out.println();
+    }
+
+
     // out.println("")
     // result = {}
     // // find longest name
@@ -630,6 +657,10 @@ void slight_TLC5957::set_fc_BC_all(uint16_t BC_value) {
     for (size_t chip_index = 0; chip_index < chip_count; chip_index++) {
         set_fc_BC(chip_index, BC_value);
     }
+}
+
+bool slight_TLC5957::get_fc_ESPWM(uint16_t chip_index) {
+    return get_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.ESPWM);
 }
 
 void slight_TLC5957::set_fc_ESPWM(uint16_t chip_index, bool enable) {

@@ -363,6 +363,8 @@ public:
     void set_fc_BC_all(uint16_t BC_value = 0b100);
     // void set_fc_BC_all(uint16_t BC_value = _FC_FIELDS.BC.defaultv);
 
+    bool get_fc_ESPWM(uint16_t chip_index = 0);
+
     void set_fc_ESPWM(uint16_t chip_index = 0, bool enable = false);
 
     void set_fc_ESPWM_all(bool enable = false);
