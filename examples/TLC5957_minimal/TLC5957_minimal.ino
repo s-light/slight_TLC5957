@@ -127,8 +127,9 @@ boolean debugOut_LiveSign_LED_Enabled = 1;
 //     uint8_t spi_mosi = MOSI,
 //     uint8_t spi_miso = MISO
 // );
+uint8_t pixel_count = 1*16;
 // use default pins
-slight_TLC5957 tlc = slight_TLC5957(2*16);
+slight_TLC5957 tlc = slight_TLC5957(pixel_count);
 
 
 void setup_D9_10MHz() {
@@ -242,19 +243,38 @@ void tlc_init(Print &out) {
 }
 
 
+void pixel_check() {
+    if (step >= tlc.pixel_count) {
+        step = 0;
+        Serial.println("step wrap around.");
+        tlc.set_pixel_all_16bit_value(0, 0, 0);
+    }
+    tlc.set_pixel_16bit_value(step, 1, 1, 1);
+    step += 1;
+    Serial.print("step:");
+    Serial.println(step);
+    tlc.show();
+}
+
+void channel_check() {
+    if (step >= tlc.channel_count) {
+        step = 0;
+        Serial.println("step wrap around.");
+        tlc.set_pixel_all_16bit_value(0, 0, 0);
+    }
+    tlc.set_pixel_all_16bit_value(0, 0, 0);
+    tlc.set_channel(step, 1);
+    step += 1;
+    Serial.print("step:");
+    Serial.println(step);
+    tlc.show();
+}
+
 void update_animation() {
     if ((millis() - animation_timestamp) > animation_interval) {
         animation_timestamp = millis();
-        tlc.set_pixel_16bit_value(step, 1, 1, 1);
-        step += 1;
-        Serial.print("step:");
-        Serial.println(step);
-        if (step >= tlc.pixel_count) {
-            step = 0;
-            Serial.println("step wrap around.");
-            tlc.set_pixel_all_16bit_value(0, 0, 0);
-        }
-        tlc.show();
+        // pixel_check();
+        channel_check();
     }
 }
 

@@ -170,7 +170,7 @@ bool animation_run = true;
 
 unsigned long animation_timestamp = 0;
 //uint16_t animation_interval = 1000; //ms
-uint16_t animation_interval = 15; //ms
+uint16_t animation_interval = 5; //ms
 
 uint8_t step = 0;
 
@@ -224,7 +224,8 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("MHz)"));
             out.println(F("\t 't': set buffer to test values 't'"));
             out.println(F("\t 'p': set pixel 'p0:65535'"));
-            out.println(F("\t 'P': set all pixel 'p65535'"));
+            out.println(F("\t 'P': set all pixel 'P65535'"));
+            out.println(F("\t 'z': set all pixel to 21845 'z'"));
             out.println(F("\t 'b': set all pixel to black 'b'"));
             out.println(F("\t 'B': print Buffer 'B'"));
             out.println();
@@ -250,7 +251,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("__________"));
             out.println(F("Tests:"));
 
-            out.println(F("nothing to do."));
+            // out.println(F("nothing to do."));
 
             // uint16_t wTest = 65535;
             // uint16_t wTest = atoi(&command[1]);
@@ -267,6 +268,20 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // out.println();
             //
             // out.println();
+            uint8_t buffer_count = 8;
+            uint8_t buffer[] = {0, 1,  0, 255,  127, 0,  255, 255};
+            // as 16bit:           1,     255,   32512,     65535
+
+            out.println(F("buffer as 8x uint8_t: "));
+            slight_DebugMenu::print_uint8_array(
+                out, buffer, buffer_count);
+            out.println();
+            uint16_t *buf = reinterpret_cast<uint16_t*>(buffer);
+            out.println(F("buffer as 4x uint16_t: "));
+            slight_DebugMenu::print_uint16_array(
+                out, buf, buffer_count/2);
+            out.println();
+
 
             out.println(F("__________"));
         } break;
@@ -280,7 +295,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
         } break;
         case 'a': {
             out.println(F("set animation interval:"));
-            uint8_t value = atoi(&command[1]);
+            uint16_t value = atoi(&command[1]);
             out.print(value);
             animation_interval = value;
             out.println();
@@ -370,8 +385,12 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.print(value);
             out.println();
         } break;
+        case 'z': {
+            out.println(F("Set all Pixel to 21845."));
+            tlc.set_pixel_all_16bit_value(21845, 21845, 21845);
+            out.println();
+        } break;
         case 'b': {
-            // set pixel
             out.println(F("Set all Pixel to black."));
             tlc.set_pixel_all_16bit_value(0, 0, 0);
             out.println();
@@ -405,10 +424,10 @@ void tlc_init(Print &out) {
         out.println(F("  tlc.begin()"));
         tlc.begin();
 
-        // 0.28MHz
-        // tlc.spi_baudrate = 0.28 * 1000 * 1000;
+        // 2MHz
+        tlc.spi_baudrate = 2.0 * 1000 * 1000;
         // 0.001MHz = 1000kHz
-        tlc.spi_baudrate = 0.001 * 1000 * 1000;
+        // tlc.spi_baudrate = 0.001 * 1000 * 1000;
 
         out.print(F("  tlc.pixel_count: "));
         out.print(tlc.pixel_count);
@@ -440,8 +459,10 @@ void gsclock_init(Print &out) {
     out.println(F("init gsclock:")); {
         out.println(F("  init gsclock timer."));
         setup_D9_10MHz();
-        out.println(F("  set gsclock to 3MHz."));
-        gsclock_set_frequency_MHz(3.0);
+        // out.println(F("  set gsclock to 3MHz."));
+        // gsclock_set_frequency_MHz(3.0);
+        out.println(F("  set gsclock to 30MHz."));
+        gsclock_set_frequency_MHz(30.0);
     }
     out.println(F("  finished."));
 }
@@ -581,7 +602,8 @@ uint8_t get_D9_period_reg() {
 
 
 void print_tlc_buffer(Print &out) {
-    uint16_t *buffer = reinterpret_cast<uint16_t *>(tlc.buffer);
+    uint8_t *buffer = tlc.buffer;
+    // uint16_t *buffer16 = reinterpret_cast<uint16_t *>(tlc.buffer);
     char color_names[][6] = {
         "index",
         "blue ",
@@ -600,25 +622,34 @@ void print_tlc_buffer(Print &out) {
     out.println();
     // print data
     for (size_t color_i = 0; color_i < tlc.COLORS_PER_PIXEL; color_i++) {
-        uint16_t offset = color_i * tlc.COLORS_PER_PIXEL;
         out.print(color_names[color_i + 1]);
         out.print(F(" "));
-        index = color_i;
+        index = color_i * tlc.BUFFER_BYTES_PER_COLOR;
         slight_DebugMenu::print_uint16_align_right(
-            out, buffer[index]);
+            // out, buffer16[index]);
+            out, ((buffer[index + 1]<<0) | (buffer[index + 0]<<8)) );
             // out, index);
         for (
-            index += tlc.COLORS_PER_PIXEL;
-            index < tlc.channel_count;
-            index += tlc.COLORS_PER_PIXEL
+            index += tlc.BUFFER_BYTES_PER_PIXEL;
+            index < tlc.buffer_byte_count;
+            index += tlc.BUFFER_BYTES_PER_PIXEL
         ) {
             out.print(F(", "));
             slight_DebugMenu::print_uint16_align_right(
-                out, buffer[index]);
+                // out, buffer16[index]);
+                out, ((buffer[index + 1]<<0) | (buffer[index + 0]<<8)) );
                 // out, index);
         }
         out.println();
     }
+    out.println(F("raw: "));
+    const uint8_t line_length = 8*2*3;
+    out.print(F(" p1 "));
+    slight_DebugMenu::print_uint8_array(out, tlc.buffer, line_length);
+    out.println();
+    out.print(F(" p2 "));
+    slight_DebugMenu::print_uint8_array(out, tlc.buffer + line_length, line_length);
+    out.println();
 }
 
 
@@ -628,6 +659,9 @@ void animation_init(Print &out) {
         out.print(F("  animation_interval: "));
         out.print(animation_interval);
         out.println();
+
+        out.println(F("  Set all Pixel to 21845."));
+        tlc.set_pixel_all_16bit_value(21845, 21845, 21845);
     }
     out.println(F("  finished."));
 }

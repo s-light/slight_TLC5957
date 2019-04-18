@@ -8,7 +8,7 @@
 /******************************************************************************
     The MIT License (MIT)
 
-    Copyright (c) 2018 Stefan Krüger
+    Copyright (c) 2019 Stefan Krüger
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -281,6 +281,7 @@ void slight_TLC5957::_write_buffer_GS() {
         // - we do a for loop
         for (uint16_t byte_index = 0; byte_index < write_count; byte_index++) {
             SPI.transfer(buffer[buffer_start + byte_index]);
+            // delayMicroseconds(2);
         }
         SPI.endTransaction();
         SPI.end();
@@ -294,6 +295,7 @@ void slight_TLC5957::_write_buffer_GS() {
                 _FC__WRTGS, buffer_start, buffer);
         }
         buffer_start += CHIP_FUNCTION_CMD_BYTE_COUNT;
+        // delayMicroseconds(2);
     }
 }
 
@@ -335,7 +337,9 @@ void slight_TLC5957::_write_buffer_with_function_command(
     uint8_t *buffer
 ) {
     // """Bit-Banging SPI write to sync with latch pulse."""
-    uint16_t value = buffer[buffer_start];
+    uint16_t value = (
+        (buffer[buffer_start + 0] << 8) |
+        buffer[buffer_start + 1]);
 
     // faster speeds with direct port access:
     // https://forum.arduino.cc/index.php?topic=4324.0
@@ -657,13 +661,26 @@ void slight_TLC5957::set_pixel_16bit_value(
     // :param int value_g: 0..65535
     // :param int value_b: 0..65535
     // """
+
+    // uint16_t *buf = reinterpret_cast<uint16_t*>(buffer);
+    // uint16_t pixel_start = pixel_index * COLORS_PER_PIXEL;
+    // uint16_t buffer_start = (pixel_start + 0) * BUFFER_BYTES_PER_COLOR;
+    // buf[buffer_start] = value_b;
+    // buffer_start = (pixel_start + 1) * BUFFER_BYTES_PER_COLOR;
+    // buf[buffer_start] = value_g;
+    // buffer_start = (pixel_start + 2) * BUFFER_BYTES_PER_COLOR;
+    // buf[buffer_start] = value_r;
+
     uint16_t pixel_start = pixel_index * COLORS_PER_PIXEL;
     uint16_t buffer_start = (pixel_start + 0) * BUFFER_BYTES_PER_COLOR;
-    buffer[buffer_start] = value_b;
+    buffer[buffer_start + 0] = (value_b >> 8) & 0xFF;
+    buffer[buffer_start + 1] = value_b & 0xFF;
     buffer_start = (pixel_start + 1) * BUFFER_BYTES_PER_COLOR;
-    buffer[buffer_start] = value_g;
+    buffer[buffer_start + 0] = (value_g >> 8) & 0xFF;
+    buffer[buffer_start + 1] = value_g & 0xFF;
     buffer_start = (pixel_start + 2) * BUFFER_BYTES_PER_COLOR;
-    buffer[buffer_start] = value_r;
+    buffer[buffer_start + 0] = (value_r >> 8) & 0xFF;
+    buffer[buffer_start + 1] = value_r & 0xFF;
 }
 
 void slight_TLC5957::set_pixel_float_value(
@@ -685,11 +702,14 @@ void slight_TLC5957::set_pixel_float_value(
     uint16_t value_b_int = value_b * 65535;
     uint16_t pixel_start = pixel_index * COLORS_PER_PIXEL;
     uint16_t buffer_start = (pixel_start + 0) * BUFFER_BYTES_PER_COLOR;
-    buffer[buffer_start] = value_b_int;
+    buffer[buffer_start + 0] = (value_b_int >> 8) & 0xFF;
+    buffer[buffer_start + 1] = value_b_int & 0xFF;
     buffer_start = (pixel_start + 1) * BUFFER_BYTES_PER_COLOR;
-    buffer[buffer_start] = value_g_int;
+    buffer[buffer_start + 0] = (value_g_int >> 8) & 0xFF;
+    buffer[buffer_start + 1] = value_g_int & 0xFF;
     buffer_start = (pixel_start + 2) * BUFFER_BYTES_PER_COLOR;
-    buffer[buffer_start] = value_r_int;
+    buffer[buffer_start + 0] = (value_r_int >> 8) & 0xFF;
+    buffer[buffer_start + 1] = value_r_int & 0xFF;
 }
 
 // set_pixel_16bit_color(self, pixel_index, color)
@@ -741,8 +761,10 @@ void slight_TLC5957::set_channel(uint16_t channel_index, uint16_t value) {
             }
         }
         // print("{:>2} → {:>2}".format(temp, channel_index))
-        uint16_t buffer_index = channel_index * BUFFER_BYTES_PER_COLOR;
-        buffer[buffer_index] = value;
+        uint16_t buffer_start = channel_index * BUFFER_BYTES_PER_COLOR;
+        // buffer[buffer_start] = value;
+        buffer[buffer_start + 0] = (value >> 8) & 0xFF;
+        buffer[buffer_start + 1] = value & 0xFF;
         // _set_16bit_value_in_buffer(
         //     COLORS_PER_PIXEL - channel_index, value)
     }
