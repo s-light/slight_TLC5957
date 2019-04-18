@@ -127,7 +127,7 @@ boolean debugOut_LiveSign_LED_Enabled = 1;
 //     uint8_t spi_mosi = MOSI,
 //     uint8_t spi_miso = MISO
 // );
-uint8_t pixel_count = 1*16;
+uint8_t pixel_count = 2*16;
 // use default pins
 slight_TLC5957 tlc = slight_TLC5957(pixel_count);
 
@@ -227,6 +227,9 @@ const uint16_t animation_interval = 1000; //ms
 
 uint8_t step = 0;
 
+uint16_t value_low = 0;
+uint16_t value_high = 500;
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // functions
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,9 +250,9 @@ void pixel_check() {
     if (step >= tlc.pixel_count) {
         step = 0;
         Serial.println("step wrap around.");
-        tlc.set_pixel_all_16bit_value(0, 0, 0);
+        tlc.set_pixel_all_16bit_value(value_low, value_low, value_low);
     }
-    tlc.set_pixel_16bit_value(step, 1, 1, 1);
+    tlc.set_pixel_16bit_value(step, value_high, value_high, value_high);
     step += 1;
     Serial.print("step:");
     Serial.println(step);
@@ -260,10 +263,10 @@ void channel_check() {
     if (step >= tlc.channel_count) {
         step = 0;
         Serial.println("step wrap around.");
-        tlc.set_pixel_all_16bit_value(0, 0, 0);
+        tlc.set_pixel_all_16bit_value(value_low, value_low, value_low);
     }
-    tlc.set_pixel_all_16bit_value(0, 0, 0);
-    tlc.set_channel(step, 1);
+    tlc.set_pixel_all_16bit_value(value_low, value_low, value_low);
+    tlc.set_channel(step, value_high);
     step += 1;
     Serial.print("step:");
     Serial.println(step);
