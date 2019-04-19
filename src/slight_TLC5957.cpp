@@ -44,7 +44,10 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-
+// 000010010000000010000000010000000000000000010101
+// 000010010000000010000000010000000000000000010101
+// 000010011111111111111111101111111100000100010101
+// 000010011111111111111111111111111100000100010101
 
 static const struct _FC_FIELDS_t {
     const slight_TLC5957::function_control_t LODVTH = {
@@ -452,24 +455,22 @@ void slight_TLC5957::set_fc_bits_in_buffer(
     //         value
     //     )
     // )
-    uint8_t offset = part_bit_offset + field->offset;
+    uint16_t offset = part_bit_offset + field->offset;
     // restrict value
-    value &= field->mask;
+    uint64_t value_prepared = (uint64_t)value & field->mask;
     // move value to position
-    value = value << offset;
+    value_prepared = value_prepared << offset;
     // calculate header start
     uint16_t header_start = chip_index * CHIP_BUFFER_BYTE_COUNT;
     // get chip header
     uint64_t header = _get_48bit_value_from_buffer(
         _buffer_fc, header_start);
-    // print("{:048b}".format(header))
-    // 0xFFFFFFFFFFFF == 0b11111111111111111111111111111111....
     // create/move mask
-    uint16_t mask = field->mask << offset;
+    uint64_t mask = (uint64_t)field->mask << offset;
     // clear
     header &= ~mask;
     // set
-    header |= value;
+    header |= value_prepared;
     // write header back
     _set_48bit_value_in_buffer(_buffer_fc, header_start, header);
 }
@@ -490,7 +491,7 @@ uint16_t slight_TLC5957::get_fc_bits_in_buffer(
     //         field,
     //     )
     // )
-    uint8_t offset = part_bit_offset + field->offset;
+    uint16_t offset = part_bit_offset + field->offset;
     // calculate header start
     uint16_t header_start = chip_index * CHIP_BUFFER_BYTE_COUNT;
     // get chip header
@@ -499,15 +500,17 @@ uint16_t slight_TLC5957::get_fc_bits_in_buffer(
     // print("{:048b}".format(header))
     // 0xFFFFFFFFFFFF == 0b11111111111111111111111111111111....
     // create/move mask
-    uint16_t mask = field->mask << offset;
-    uint16_t value = header & mask;
-    // move value to position
-    value = value >> offset;
-    return value;
+    uint64_t mask = (uint64_t)field->mask << offset;
+    uint64_t value = header & mask;
+    // move value back to position
+    uint16_t value_result = value >> offset;
+    return value_result;
 }
 
 
 void slight_TLC5957::_init_buffer_fc() {
+    // default should be:
+    // 000010010000000010000000010000000000000000010101
     const function_control_t *field;
     for (size_t i = 0; i < chip_count; i++) {
         // for (auto field : _FC_FIELDS) {
@@ -552,29 +555,21 @@ void slight_TLC5957::_init_buffer_fc() {
 
 void slight_TLC5957::print_buffer_fc(Print &out) {
     // TODO(s-light): find a nice way to print this..
-    out.println("print_buffer_fc → TODO....");
-
     for (size_t chip_index = 0; chip_index < chip_count; chip_index++) {
         out.print("chip ");
         out.print(chip_index);
         out.print(": ");
         uint8_t buffer_start = 0;
-        uint64_t value = (
-            ((uint64_t)_buffer_fc[buffer_start + 0] << 40) |
-            ((uint64_t)_buffer_fc[buffer_start + 1] << 32) |
-            ((uint64_t)_buffer_fc[buffer_start + 2] << 24) |
-            ((uint64_t)_buffer_fc[buffer_start + 3] << 16) |
-            ((uint64_t)_buffer_fc[buffer_start + 4] <<  8) |
-            (uint64_t)_buffer_fc[buffer_start + 5]);
-            for (uint64_t mask = ((uint64_t)1 << 47); mask; mask >>= 1) {
-                // check if this bit is set
-                if (mask & value) {
-                    out.print('1');
-                } else {
-                    out.print('0');
-                }
+        uint64_t value = _get_48bit_value_from_buffer(_buffer_fc, buffer_start);
+        for (uint64_t mask = ((uint64_t)1 << 47); mask; mask >>= 1) {
+            // check if this bit is set
+            if (mask & value) {
+                out.print('1');
+            } else {
+                out.print('0');
             }
-            out.println();
+        }
+        out.println();
     }
 
 
@@ -634,6 +629,13 @@ void slight_TLC5957::set_fc_CC(
     uint16_t CCG_value,
     uint16_t CCB_value
 ) {
+    Print &out = Serial;
+    out.print("CCR_value ");
+    out.println(CCR_value);
+    out.print("CCG_value ");
+    out.println(CCG_value);
+    out.print("CCB_value ");
+    out.println(CCB_value);
     set_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.CCR, CCR_value);
     set_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.CCG, CCG_value);
     set_fc_bits_in_buffer(chip_index, 0, &_FC_FIELDS.CCB, CCB_value);

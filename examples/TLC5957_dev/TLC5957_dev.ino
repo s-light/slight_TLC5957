@@ -185,6 +185,109 @@ uint8_t step = 0;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Menu System
 
+void menu__print_help(Print &out) {
+    // help
+    out.println(F("____________________________________________________________"));
+    out.println();
+    out.println(F("Help for Commands:"));
+    out.println();
+    out.println(F("\t '?': this help"));
+    out.println(F("\t '!': sketch info"));
+    out.println(F("\t 'y': toggle DebugOut livesign print"));
+    out.println(F("\t 'Y': toggle DebugOut livesign LED"));
+    out.println(F("\t 'x': tests"));
+    out.println();
+    // out.println();
+    // out.println(F("\t 'f': test fc 'f'"));
+    out.println(F("\t 'u': tlc.show() 'u'"));
+    out.print(F("\t 'r': toggle animation_run 'r' ("));
+    out.print(animation_run);
+    out.println(F(")"));
+    out.print(F("\t 'e': toggle ESPWM 'e' ("));
+    out.print(tlc.get_fc_ESPWM());
+    out.println(F(")"));
+    out.print(F("\t 'a': set animation_interval 'a1000' ("));
+    out.print(animation_interval);
+    out.println(F("ms)"));
+    out.print(F("\t 'g': set grayscale frequency in MHz 'g1.0' ("));
+    out.print(gsclock_get_frequency_MHz(), 4);
+    out.println(F("MHz)"));
+    out.print(F("\t 's': set spi baudrate in MHz 's1.0' ("));
+    out.print(tlc.spi_baudrate / (1000.0 * 1000), 4);
+    out.println(F("MHz)"));
+    out.println(F("\t 't': set buffer to test values 't'"));
+    out.println(F("\t 'p': set pixel 'p0:65535'"));
+    out.println(F("\t 'P': set all pixel 'P65535'"));
+    out.println(F("\t 'z': set all pixel to 21845 'z'"));
+    out.println(F("\t 'b': set all pixel to black 'b'"));
+    out.println(F("\t 'B': print Buffer 'B'"));
+    out.println(F("\t 'F': print buffer_fc 'F'"));
+    out.println();
+    out.println(F("____________________________________________________________"));
+}
+
+void menu__test_buffer(Print &out) {
+    out.println(F("SetBuffer:"));
+    out.println(F("--- old"));
+    print_tlc_buffer(out);
+    // tlc.set_pixel_all_16bit_value(
+    //     255, 1, 1);
+    //     // 0b11000110, 0b11000110, 0b11000110); // 198
+    //     // 0x0055, 0x0055, 0x0055);
+    //     // 0b01010101, 0b10101010, 0b10011001);
+    //     // 0x0055, 0x00AA, 0x0099);
+    //     // 85, 170, 153);
+    // out.println(F("--- new"));
+    // print_tlc_buffer(out);
+
+    out.println(F("--- red"));
+    tlc.set_pixel_all_16bit_value(1, 0, 0);
+    print_tlc_buffer(out);
+    tlc.show();
+    delay(1000);
+    out.println(F("--- green"));
+    tlc.set_pixel_all_16bit_value(0, 1, 0);
+    print_tlc_buffer(out);
+    tlc.show();
+    delay(1000);
+    out.println(F("--- blue"));
+    tlc.set_pixel_all_16bit_value(0, 0, 1);
+    print_tlc_buffer(out);
+    tlc.show();
+    delay(1000);
+    out.println(F("--- red full"));
+    tlc.set_pixel_all_16bit_value(65535, 0, 0);
+    print_tlc_buffer(out);
+    tlc.show();
+    delay(100);
+    out.println(F("--- white"));
+    tlc.set_pixel_all_16bit_value(1, 1, 1);
+    print_tlc_buffer(out);
+    tlc.show();
+
+    out.println();
+}
+
+void menu__set_pixel(Print &out, char *command) {
+    out.print(F("Set pixel "));
+    uint8_t command_offset = 1;
+    uint8_t index = atoi(&command[command_offset]);
+    // a better way than this would be to search for the ':'
+    // i have used this a long time ago for MAC address format parsing
+    // was something with 'tokenize' or similar..
+    command_offset = 3;
+    if (index > 9) {
+        command_offset = command_offset +1;
+    }
+    out.print(index);
+    out.print(F(" to "));
+    uint16_t value = atoi(&command[command_offset]);
+    out.print(value);
+    tlc.set_pixel_16bit_value(index, value, value, value);
+    out.println();
+}
+
+
 // Main Menu
 void handleMenu_Main(slight_DebugMenu *pInstance) {
     Print &out = pInstance->get_stream_out_ref();
@@ -196,44 +299,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
         case 'h':
         case 'H':
         case '?': {
-            // help
-            out.println(F("____________________________________________________________"));
-            out.println();
-            out.println(F("Help for Commands:"));
-            out.println();
-            out.println(F("\t '?': this help"));
-            out.println(F("\t '!': sketch info"));
-            out.println(F("\t 'y': toggle DebugOut livesign print"));
-            out.println(F("\t 'Y': toggle DebugOut livesign LED"));
-            out.println(F("\t 'x': tests"));
-            out.println();
-            // out.println();
-            // out.println(F("\t 'f': test fc 'f'"));
-            out.println(F("\t 'u': tlc.show() 'u'"));
-            out.print(F("\t 'r': toggle animation_run 'r' ("));
-            out.print(animation_run);
-            out.println(F(")"));
-            out.print(F("\t 'e': toggle ESPWM 'e' ("));
-            out.print(tlc.get_fc_ESPWM());
-            out.println(F(")"));
-            out.print(F("\t 'a': set animation_interval 'a1000' ("));
-            out.print(animation_interval);
-            out.println(F("ms)"));
-            out.print(F("\t 'g': set grayscale frequency in MHz 'g1.0' ("));
-            out.print(gsclock_get_frequency_MHz(), 4);
-            out.println(F("MHz)"));
-            out.print(F("\t 's': set spi baudrate in MHz 's1.0' ("));
-            out.print(tlc.spi_baudrate / (1000.0 * 1000), 4);
-            out.println(F("MHz)"));
-            out.println(F("\t 't': set buffer to test values 't'"));
-            out.println(F("\t 'p': set pixel 'p0:65535'"));
-            out.println(F("\t 'P': set all pixel 'P65535'"));
-            out.println(F("\t 'z': set all pixel to 21845 'z'"));
-            out.println(F("\t 'b': set all pixel to black 'b'"));
-            out.println(F("\t 'B': print Buffer 'B'"));
-            out.println(F("\t 'F': print buffer_fc 'F'"));
-            out.println();
-            out.println(F("____________________________________________________________"));
+            menu__print_help(out);
         } break;
         case '!': {
             sketchinfo_print(out);
@@ -254,90 +320,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // get state
             out.println(F("__________"));
             out.println(F("Tests:"));
-
-            // out.println(F("nothing to do."));
-
-            // uint16_t wTest = 65535;
-            // uint16_t wTest = atoi(&command[1]);
-            // out.print(F("wTest: "));
-            // out.print(wTest);
-            // out.println();
-            //
-            // out.print(F("1: "));
-            // out.print((byte)wTest);
-            // out.println();
-            //
-            // out.print(F("2: "));
-            // out.print((byte)(wTest>>8));
-            // out.println();
-            //
-            // out.println();
-
-
-            // uint8_t buffer_count = 8;
-            // uint8_t buffer[] = {0, 1,  0, 255,  127, 0,  255, 255};
-            // // as 16bit:           1,     255,   32512,     65535
-            //
-            // out.println(F("buffer as 8x uint8_t: "));
-            // slight_DebugMenu::print_uint8_array(
-            //     out, buffer, buffer_count);
-            // out.println();
-            // uint16_t *buf = reinterpret_cast<uint16_t*>(buffer);
-            // out.println(F("buffer as 4x uint16_t: "));
-            // slight_DebugMenu::print_uint16_array(
-            //     out, buf, buffer_count/2);
-            // out.println();
-
-            uint8_t buffer[12] = {
-                0b00000001, 0b00000011, 0b00000001, 0b01110001, 0b00000001, 0b01111001,
-                0b00000001, 0b00000011, 0b00000001, 0b01110001, 0b00000001, 0b01111001,
-            };
-            // uint8_t buffer[12] = (
-            //     (0b000000010000000100000001000000010000000100000001 << 6) |
-            //      0b000000010000000100000001000000010000000100000001
-            // );
-            out.println(F("buffer as 12x uint8_t: "));
-            slight_DebugMenu::print_uint8_array(out, buffer, 12);
-            out.println();
-            out.println(F("buffer as bin: "));
-            out.print(F("p1: "));
-            uint8_t buffer_start = 0;
-            uint64_t value = (
-                ((uint64_t)buffer[buffer_start + 0] << 40) |
-                ((uint64_t)buffer[buffer_start + 1] << 32) |
-                ((uint64_t)buffer[buffer_start + 2] << 24) |
-                ((uint64_t)buffer[buffer_start + 3] << 16) |
-                ((uint64_t)buffer[buffer_start + 4] <<  8) |
-                 (uint64_t)buffer[buffer_start + 5]);
-            for (uint64_t mask = ((uint64_t)1 << 47); mask; mask >>= 1) {
-                // check if this bit is set
-                if (mask & value) {
-                    out.print('1');
-                } else {
-                    out.print('0');
-                }
-            }
-            out.println();
-            out.print(F("p1: "));
-            buffer_start = 6;
-            value = (
-                ((uint64_t)buffer[buffer_start + 0] << 40) |
-                ((uint64_t)buffer[buffer_start + 1] << 32) |
-                ((uint64_t)buffer[buffer_start + 2] << 24) |
-                ((uint64_t)buffer[buffer_start + 3] << 16) |
-                ((uint64_t)buffer[buffer_start + 4] <<  8) |
-                 (uint64_t)buffer[buffer_start + 5]);
-            for (uint64_t mask = ((uint64_t)1 << 47); mask; mask >>= 1) {
-                // check if this bit is set
-                if (mask & value) {
-                    out.print('1');
-                } else {
-                    out.print('0');
-                }
-            }
-            out.println();
-
-
+            out.println(F("nothing to do."));
             out.println(F("__________"));
         } break;
         case 'u': {
@@ -380,63 +363,10 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // out.println();
         } break;
         case 't': {
-            out.println(F("SetBuffer:"));
-            out.println(F("--- old"));
-            print_tlc_buffer(out);
-            // tlc.set_pixel_all_16bit_value(
-            //     255, 1, 1);
-            //     // 0b11000110, 0b11000110, 0b11000110); // 198
-            //     // 0x0055, 0x0055, 0x0055);
-            //     // 0b01010101, 0b10101010, 0b10011001);
-            //     // 0x0055, 0x00AA, 0x0099);
-            //     // 85, 170, 153);
-            // out.println(F("--- new"));
-            // print_tlc_buffer(out);
-
-            out.println(F("--- red"));
-            tlc.set_pixel_all_16bit_value(1, 0, 0);
-            print_tlc_buffer(out);
-            tlc.show();
-            delay(1000);
-            out.println(F("--- green"));
-            tlc.set_pixel_all_16bit_value(0, 1, 0);
-            print_tlc_buffer(out);
-            tlc.show();
-            delay(1000);
-            out.println(F("--- blue"));
-            tlc.set_pixel_all_16bit_value(0, 0, 1);
-            print_tlc_buffer(out);
-            tlc.show();
-            delay(1000);
-            out.println(F("--- red full"));
-            tlc.set_pixel_all_16bit_value(65535, 0, 0);
-            print_tlc_buffer(out);
-            tlc.show();
-            delay(100);
-            out.println(F("--- white"));
-            tlc.set_pixel_all_16bit_value(1, 1, 1);
-            print_tlc_buffer(out);
-            tlc.show();
-
-            out.println();
+            menu__test_buffer(out);
         } break;
         case 'p': {
-            out.print(F("Set pixel "));
-            uint8_t command_offset = 1;
-            uint8_t index = atoi(&command[command_offset]);
-            // a better way than this would be to search for the ':'
-            // i have used this a long time ago for MAC address format parsing
-            // was something with 'tokenize' or similar..
-            command_offset = 3;
-            if (index > 9) {
-                command_offset = command_offset +1;
-            }
-            out.print(index);
-            out.print(F(" to "));
-            uint16_t value = atoi(&command[command_offset]);
-            out.print(value);
-            tlc.set_pixel_16bit_value(index, value, value, value);
-            out.println();
+            menu__set_pixel(out, command);
         } break;
         case 'P': {
             out.print(F("Set all pixel to "));
@@ -486,13 +416,27 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
 
 void tlc_init(Print &out) {
     out.println(F("setup tlc:")); {
+
+        tlc.print_buffer_fc(out);
+
         out.println(F("  tlc.begin()"));
         tlc.begin();
 
+        tlc.print_buffer_fc(out);
+
+        out.println(F("  set spi_baudrate"));
         // 2MHz
         tlc.spi_baudrate = 2.0 * 1000 * 1000;
         // 0.001MHz = 1000kHz
         // tlc.spi_baudrate = 0.001 * 1000 * 1000;
+
+        out.println(F("  set function configurations"));
+        tlc.set_fc_CC_all(0x1FF, 0x1FF, 0x0FF);
+        tlc.set_fc_BC_all(0x4);
+        tlc.set_fc_ESPWM_all(true);
+
+        tlc.print_buffer_fc(out);
+
 
         out.print(F("  tlc.pixel_count: "));
         out.print(tlc.pixel_count);
@@ -733,8 +677,8 @@ void animation_init(Print &out) {
 
         // out.println(F("  Set all Pixel to 21845."));
         // tlc.set_pixel_all_16bit_value(21845, 21845, 21845);
-        out.println(F("  Set all Pixel to red=blue=1."));
-        tlc.set_pixel_all_16bit_value(1, 0, 1);
+        out.println(F("  Set all Pixel to red=blue=100."));
+        tlc.set_pixel_all_16bit_value(100, 0, 100);
     }
     out.println(F("  finished."));
 }
