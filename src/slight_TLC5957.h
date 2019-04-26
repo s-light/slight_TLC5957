@@ -288,8 +288,8 @@ public:
 
     slight_TLC5957(
         uint16_t pixel_count = 16,
-        uint8_t latch = 7,
-        uint8_t gsclk = 9,
+        uint8_t latch = A5,
+        uint8_t gsclk = 2,
         uint8_t spi_clock = SCK,
         uint8_t spi_mosi = MOSI,
         uint8_t spi_miso = MISO

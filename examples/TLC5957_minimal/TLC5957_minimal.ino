@@ -121,8 +121,8 @@ boolean debugOut_LiveSign_LED_Enabled = 1;
 // possible options and there defaults:
 // slight_TLC5957(
 //     uint8_t chip_count = 16,
-//     uint8_t latch = 7,
-//     uint8_t gsclk = 9,
+//     uint8_t latch = A5,
+//     uint8_t gsclk = 2,
 //     uint8_t spi_clock = SCK,
 //     uint8_t spi_mosi = MOSI,
 //     uint8_t spi_miso = MISO
@@ -132,59 +132,50 @@ uint8_t pixel_count = 2*16;
 slight_TLC5957 tlc = slight_TLC5957(pixel_count);
 
 
-void setup_D9_10MHz() {
+void setup_D2_10MHz() {
+    // Activate timer TC1
+    // check for correct mask at MCLK – Main Clock - 15.7 Register Summary
+    // page178f
+    // http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf#page=178&zoom=page-width,-8,539
+    // CLK_TC1_APB
+    MCLK->APBAMASK.reg |= MCLK_APBAMASK_TC1;
 
-    // Activate timer TC3
-    // CLK_TC3_APB
-    MCLK->APBBMASK.reg |= MCLK_APBBMASK_TC3;
-
-    // Set up the generic clock (GCLK7)
-    GCLK->GENCTRL[7].reg =
-        // Divide clock source by divisor 1
-        GCLK_GENCTRL_DIV(1) |
-        // Set the duty cycle to 50/50 HIGH/LOW
-        GCLK_GENCTRL_IDC |
-        // Enable GCLK7
-        GCLK_GENCTRL_GENEN |
-        // Select 120MHz DPLL clock source
-        GCLK_GENCTRL_SRC_DPLL0;
-    // Wait for synchronization
-    while (GCLK->SYNCBUSY.bit.GENCTRL7);
-
-    // for PCHCTRL numbers have a look at Table 14-9. PCHCTRLm Mapping page168ff
+    // for PCHCTRL numbers have a look at
+    // Table 14-9. PCHCTRLm Mapping page168ff
     // http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf#page=169&zoom=page-width,-8,696
-    GCLK->PCHCTRL[26].reg =
-        // Enable the TC3 peripheral channel
+    // GCLK->PCHCTRL[GCLK_TC1].reg =
+    GCLK->PCHCTRL[9].reg =
+        // Enable the peripheral channel
         GCLK_PCHCTRL_CHEN |
-        // Connect generic clock 7 to TC3
+        // Connect generic clock 7
         GCLK_PCHCTRL_GEN_GCLK7;
 
-    // Enable the peripheral multiplexer on pin D9
-    PORT->Group[g_APinDescription[9].ulPort].
-        PINCFG[g_APinDescription[9].ulPin].bit.PMUXEN = 1;
+    // Enable the peripheral multiplexer on pin D2
+    PORT->Group[g_APinDescription[2].ulPort].
+        PINCFG[g_APinDescription[2].ulPin].bit.PMUXEN = 1;
 
-    // Set the D9 (PORT_PA19) peripheral multiplexer to
-    // peripheral (odd port number) E(6): TC3, Channel 1
+    // Set the D2 (PORT_PA07) peripheral multiplexer to
+    // peripheral (odd port number) E(6): TC1, Channel 1
     // check if you need even or odd PMUX!!!
     // http://forum.arduino.cc/index.php?topic=589655.msg4064311#msg4064311
-    PORT->Group[g_APinDescription[9].ulPort].
-        PMUX[g_APinDescription[9].ulPin >> 1].reg |= PORT_PMUX_PMUXO(4);
+    PORT->Group[g_APinDescription[2].ulPort].
+        PMUX[g_APinDescription[2].ulPin >> 1].reg |= PORT_PMUX_PMUXO(4);
 
-    TC3->COUNT8.CTRLA.reg =
+    TC1->COUNT8.CTRLA.reg =
         // Set prescaler to 2
         // 120MHz/2 = 60MHz
         TC_CTRLA_PRESCALER_DIV2 |
         // Set the reset/reload to trigger on prescaler clock
         TC_CTRLA_PRESCSYNC_PRESC;
 
-    // Set-up TC3 timer for
+    // Set-up TC1 timer for
     // Match Frequency Generation (MFRQ)
     // the period time (T) is controlled by the CC0 register.
     // (instead of PER or MAX)
     // WO[0] toggles on each Update condition.
-    TC3->COUNT8.WAVE.reg = TC_WAVE_WAVEGEN_MFRQ;
+    TC1->COUNT8.WAVE.reg = TC_WAVE_WAVEGEN_MFRQ;
     // Wait for synchronization
-    // while (TC3->COUNT8.SYNCBUSY.bit.WAVE)
+    // while (TC1->COUNT8.SYNCBUSY.bit.WAVE)
 
     // Set-up the CC (counter compare), channel 0 register
     // this sets the period
@@ -203,24 +194,28 @@ void setup_D9_10MHz() {
     //   0 = 30.0MHz
     //   1 = 15.0MHz
     //   2 = 10.0MHz
+    //   3 =  7.5MHz
+    //   4 =  6.0MHz
     //   5 =  5.0MHz
-    //   9 =  3.0MHz → minimum for smooth if not ESPWM
-    //  29 =  1.0MHz → if not ESPWM this already leads to visible flickering
-    // start with 3MHz
-    TC3->COUNT8.CC[0].reg = 2;
+    //   9 =  3.0MHz
+    //  14 =  2.0MHz
+    //  29 =  1.0MHz
+    //  59 =  0.5MHz
+    //  74 =  0.4MHz
+    //  99 =  0.3MHz
+    // 149 =  0.2MHz
+    // 255 =  0.11MHz
+    // start with 10MHz
+    TC1->COUNT8.CC[0].reg = 2;
     // Wait for synchronization
-    while (TC3->COUNT8.SYNCBUSY.bit.CC1);
+    while (TC1->COUNT8.SYNCBUSY.bit.CC1) {}
 
-    // Enable timer TC3
-    TC3->COUNT8.CTRLA.bit.ENABLE = 1;
+    // Enable timer TC1
+    TC1->COUNT8.CTRLA.bit.ENABLE = 1;
     // Wait for synchronization
-    while (TC3->COUNT8.SYNCBUSY.bit.ENABLE);
+    while (TC1->COUNT8.SYNCBUSY.bit.ENABLE) {}
 }
 
-void set_D9_period_reg(uint8_t period_reg) {
-    TC3->COUNT8.CC[0].reg = period_reg;
-    while (TC3->COUNT8.SYNCBUSY.bit.CC1);
-}
 
 unsigned long animation_timestamp = 0;
 const uint16_t animation_interval = 1000; //ms

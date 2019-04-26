@@ -177,8 +177,9 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             out.println(F("\t 'Y': toggle DebugOut livesign LED"));
             out.println(F("\t 'x': tests"));
             out.println();
-            out.println(F("\t 'f': set frequency in MHz 'f:1.0'"));
-            out.println(F("\t 'r': set period_reg 'r:255'"));
+            out.println(F("\t 'f': set D9 & D2 frequency in MHz 'f:1.0'"));
+            out.println(F("\t 'r': set D9 period_reg 'r:255'"));
+            out.println(F("\t 'R': set D2 period_reg 'r:255'"));
             out.println();
             out.println(F("____________________________________________________________"));
         } break;
@@ -201,25 +202,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             // get state
             out.println(F("__________"));
             out.println(F("Tests:"));
-
             out.println(F("nothing to do."));
-
-            // uint16_t wTest = 65535;
-            // uint16_t wTest = atoi(&command[1]);
-            // out.print(F("wTest: "));
-            // out.print(wTest);
-            // out.println();
-            //
-            // out.print(F("1: "));
-            // out.print((byte)wTest);
-            // out.println();
-            //
-            // out.print(F("2: "));
-            // out.print((byte)(wTest>>8));
-            // out.println();
-            //
-            // out.println();
-
             out.println(F("__________"));
         } break;
         case 'f': {
@@ -236,6 +219,7 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
             uint8_t value = atoi(&command[1]);
             out.print(value);
             out.println();
+            set_D2_period_reg(value);
             set_D9_period_reg(value);
         } break;
         //---------------------------------------------------------------------
@@ -253,23 +237,77 @@ void handleMenu_Main(slight_DebugMenu *pInstance) {
     // end Command Parser
 }
 
+
+
+
+
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TLC5957
 
 void gsclock_init(Print &out) {
-    out.println(F("setup gsclock:")); {
-        setup_D9_1MHz();
+    out.println(F("init gsclock:")); {
+        out.println(F("  init gsclock timer."));
+        setup_GenericClock7();
+        setup_D9_10MHz();
+        setup_D2_10MHz();
+        out.println(F("  set gsclock to 3MHz."));
+        gsclock_set_frequency_MHz(3.0);
+        // out.println(F("  set gsclock to 30MHz."));
+        // gsclock_set_frequency_MHz(30.0);
     }
-    out.println(F("\t finished."));
+    out.println(F("  finished."));
 }
 
+// Set-up the CC (counter compare), channel 0 register
+// this sets the period
+// 750 / (2 * (CC0 + 1))  = outputfrequence
+// (750 / 2) / (CC0 + 1)  = outputfrequence
+// (750 / 2) / (2 + 1)  = 125
+// 750kHz / (2 * (255 + 1))  = 1,4648kHz
+// tests
+//       750.00kHz =   1,33us
+//   0 = 375.00kHz =   2.67us
+//   1 = 187.50kHz =   5.35us
+//   2 = 125.00kHz =   8.02us
+//   3 =  93.75kHz =  10.67us
+//   4 =  74.90kHz =  13.40us
+//   5 =  61.80kHz =  16.20us
+//  10 =  33.60kHz =  29.80us
+//  64 =   5.74kHz = 174.00us
+// 128 =   2.89kHz = 346.00us
+// 255 =   1.46kHz = 687.00us
+//
+// (clockfreq / 2) / (CC0 + 1)  = outfreq  | * (CC0 + 1)
+// (clockfreq / 2) = outfreq * (CC0 + 1)   | / outfreq
+// (clockfreq / 2) / outfreq  = CC0 + 1    | -1
+// ((clockfreq / 2) / outfreq) -1  = CC0
+// (750 / 2) / 93.75  = CC0 + 1
+// ((750 / 2) / 93.75) - 1  = CC0
+// --------------------------
+// ((60 / 2) / 2) -1  = CC0
+// (60MHz / 2) / (0 + 1)  = 30MHz
+// (60MHz / 2) / (255 + 1)  = 0,117MHz = 117kHz
+//
+//       60.0MHz
+//   0 = 30.0MHz
+//   1 = 15.0MHz
+//   2 = 10.0MHz
+//   3 =  7.5MHz
+//   4 =  6.0MHz
+//   5 =  5.0MHz
+//   9 =  3.0MHz
+//  10 =  2.7MHz
+//  14 =  2.0MHz
+//  29 =  1.0MHz
+//  59 =  0.5MHz = 500kHz
+//  74 =  0.4MHz
+//  99 =  0.3MHz
+// 149 =  0.2MHz
+// 255 =  0.11MHz
 
-void setup_D9_1MHz() {
 
-    // Activate timer TC3
-    // CLK_TC3_APB
-    MCLK->APBBMASK.reg |= MCLK_APBBMASK_TC3;
-
+void setup_GenericClock7() {
     // Set up the generic clock (GCLK7)
     GCLK->GENCTRL[7].reg =
         // Divide clock source by divisor 1
@@ -278,21 +316,33 @@ void setup_D9_1MHz() {
         GCLK_GENCTRL_IDC |
         // Enable GCLK7
         GCLK_GENCTRL_GENEN |
-        // Select 48MHz DFLL clock source
+        // // Select 48MHz DFLL clock source
         // GCLK_GENCTRL_SRC_DFLL;
-        // Select 100MHz DPLL clock source
-        //GCLK_GENCTRL_SRC_DPLL1;
+        // // Select 100MHz DPLL clock source
+        // GCLK_GENCTRL_SRC_DPLL1;
         // Select 120MHz DPLL clock source
         GCLK_GENCTRL_SRC_DPLL0;
     // Wait for synchronization
-    while (GCLK->SYNCBUSY.bit.GENCTRL7);
+    while (GCLK->SYNCBUSY.bit.GENCTRL7) {}
+}
 
-    // for PCHCTRL numbers have a look at Table 14-9. PCHCTRLm Mapping page168ff
+
+void setup_D9_10MHz() {
+    // Activate timer TC3
+    // check for correct mask at MCLK – Main Clock - 15.7 Register Summary
+    // page178f
+    // http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf#page=178&zoom=page-width,-8,539
+    // CLK_TC3_APB
+    MCLK->APBBMASK.reg |= MCLK_APBBMASK_TC3;
+
+    // for PCHCTRL numbers have a look at
+    // Table 14-9. PCHCTRLm Mapping page168ff
     // http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf#page=169&zoom=page-width,-8,696
+    // GCLK->PCHCTRL[GCLK_TC3].reg =
     GCLK->PCHCTRL[26].reg =
-        // Enable the TC3 peripheral channel
+        // Enable the peripheral channel
         GCLK_PCHCTRL_CHEN |
-        // Connect generic clock 7 to TC3
+        // Connect generic clock 7
         GCLK_PCHCTRL_GEN_GCLK7;
 
     // Enable the peripheral multiplexer on pin D9
@@ -307,26 +357,9 @@ void setup_D9_1MHz() {
         PMUX[g_APinDescription[9].ulPin >> 1].reg |= PORT_PMUX_PMUXO(4);
 
     TC3->COUNT8.CTRLA.reg =
-        // Set prescaler to 1
-        // TC_CTRLA_PRESCALER_DIV1 |
-
         // Set prescaler to 2
         // 120MHz/2 = 60MHz
         TC_CTRLA_PRESCALER_DIV2 |
-
-        // Set prescaler to 8
-        // 48MHz/8 = 6MHz
-        // TC_CTRLA_PRESCALER_DIV8 |
-
-        // Set prescaler to 16
-        // 48MHz/16 = 3MHz
-        // TC_CTRLA_PRESCALER_DIV16 |
-
-        // Set prescaler to 64
-        // 48MHz/64 = 0.75MHz = 750kHz = 1,33us
-        // 120MHz/64 = 1.875MHz = 1875kHz = 0,53us
-        // TC_CTRLA_PRESCALER_DIV64 |
-
         // Set the reset/reload to trigger on prescaler clock
         TC_CTRLA_PRESCSYNC_PRESC;
 
@@ -341,33 +374,16 @@ void setup_D9_1MHz() {
 
     // Set-up the CC (counter compare), channel 0 register
     // this sets the period
-    // 750 / (2 * (CC0 + 1))  = outputfrequence
-    // (750 / 2) / (CC0 + 1)  = outputfrequence
-    // (750 / 2) / (2 + 1)  = 125
-    // 750kHz / (2 * (255 + 1))  = 1,4648kHz
-    // tests
-    //       750.00kHz =   1,33us
-    //   0 = 375.00kHz =   2.67us
-    //   1 = 187.50kHz =   5.35us
-    //   2 = 125.00kHz =   8.02us
-    //   3 =  93.75kHz =  10.67us
-    //   4 =  74.90kHz =  13.40us
-    //   5 =  61.80kHz =  16.20us
-    //  10 =  33.60kHz =  29.80us
-    //  64 =   5.74kHz = 174.00us
-    // 128 =   2.89kHz = 346.00us
-    // 255 =   1.46kHz = 687.00us
     //
     // (clockfreq / 2) / (CC0 + 1)  = outfreq  | * (CC0 + 1)
     // (clockfreq / 2) = outfreq * (CC0 + 1)   | / outfreq
     // (clockfreq / 2) / outfreq  = CC0 + 1    | -1
     // ((clockfreq / 2) / outfreq) -1  = CC0
-    // (750 / 2) / 93.75  = CC0 + 1
-    // ((750 / 2) / 93.75) - 1  = CC0
-    // --------------------------
+    //
     // ((60 / 2) / 2) -1  = CC0
-    // (60MHz / 2) / (0 + 1)  = 30MHz
-    // (60MHz / 2) / (255 + 1)  = 0,117MHz = 117kHz
+    //
+    // MAX: (60MHz / 2) / (0 + 1)  = 30MHz
+    // MIN: (60MHz / 2) / (255 + 1)  = 0,117MHz = 117kHz
     //
     //       60.0MHz
     //   0 = 30.0MHz
@@ -377,28 +393,131 @@ void setup_D9_1MHz() {
     //   4 =  6.0MHz
     //   5 =  5.0MHz
     //   9 =  3.0MHz
-    //  10 =  2.7MHz
     //  14 =  2.0MHz
     //  29 =  1.0MHz
-    //  59 =  0.5MHz = 500kHz
+    //  59 =  0.5MHz
     //  74 =  0.4MHz
     //  99 =  0.3MHz
     // 149 =  0.2MHz
     // 255 =  0.11MHz
-    // start with 1MHz
-    TC3->COUNT8.CC[0].reg = 29;
+    // start with 10MHz
+    TC3->COUNT8.CC[0].reg = 2;
     // Wait for synchronization
-    while (TC3->COUNT8.SYNCBUSY.bit.CC1);
+    while (TC3->COUNT8.SYNCBUSY.bit.CC1) {}
 
     // Enable timer TC3
     TC3->COUNT8.CTRLA.bit.ENABLE = 1;
     // Wait for synchronization
-    while (TC3->COUNT8.SYNCBUSY.bit.ENABLE);
+    while (TC3->COUNT8.SYNCBUSY.bit.ENABLE) {}
+}
+
+void set_D9_period_reg(uint8_t period_reg) {
+    TC3->COUNT8.CC[0].reg = period_reg;
+    while (TC3->COUNT8.SYNCBUSY.bit.CC1) {}
+}
+
+uint8_t get_D9_period_reg() {
+    return TC3->COUNT8.CC[0].reg;
 }
 
 
+void setup_D2_10MHz() {
+    // Activate timer TC1
+    // check for correct mask at MCLK – Main Clock - 15.7 Register Summary
+    // page178f
+    // http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf#page=178&zoom=page-width,-8,539
+    // CLK_TC1_APB
+    MCLK->APBAMASK.reg |= MCLK_APBAMASK_TC1;
+
+    // for PCHCTRL numbers have a look at
+    // Table 14-9. PCHCTRLm Mapping page168ff
+    // http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf#page=169&zoom=page-width,-8,696
+    // GCLK->PCHCTRL[GCLK_TC1].reg =
+    GCLK->PCHCTRL[9].reg =
+        // Enable the peripheral channel
+        GCLK_PCHCTRL_CHEN |
+        // Connect generic clock 7
+        GCLK_PCHCTRL_GEN_GCLK7;
+
+    // Enable the peripheral multiplexer on pin D2
+    PORT->Group[g_APinDescription[2].ulPort].
+        PINCFG[g_APinDescription[2].ulPin].bit.PMUXEN = 1;
+
+    // Set the D2 (PORT_PA07) peripheral multiplexer to
+    // peripheral (odd port number) E(6): TC1, Channel 1
+    // check if you need even or odd PMUX!!!
+    // http://forum.arduino.cc/index.php?topic=589655.msg4064311#msg4064311
+    PORT->Group[g_APinDescription[2].ulPort].
+        PMUX[g_APinDescription[2].ulPin >> 1].reg |= PORT_PMUX_PMUXO(4);
+
+    TC1->COUNT8.CTRLA.reg =
+        // Set prescaler to 2
+        // 120MHz/2 = 60MHz
+        TC_CTRLA_PRESCALER_DIV2 |
+        // Set the reset/reload to trigger on prescaler clock
+        TC_CTRLA_PRESCSYNC_PRESC;
+
+    // Set-up TC1 timer for
+    // Match Frequency Generation (MFRQ)
+    // the period time (T) is controlled by the CC0 register.
+    // (instead of PER or MAX)
+    // WO[0] toggles on each Update condition.
+    TC1->COUNT8.WAVE.reg = TC_WAVE_WAVEGEN_MFRQ;
+    // Wait for synchronization
+    // while (TC1->COUNT8.SYNCBUSY.bit.WAVE)
+
+    // Set-up the CC (counter compare), channel 0 register
+    // this sets the period
+    //
+    // (clockfreq / 2) / (CC0 + 1)  = outfreq  | * (CC0 + 1)
+    // (clockfreq / 2) = outfreq * (CC0 + 1)   | / outfreq
+    // (clockfreq / 2) / outfreq  = CC0 + 1    | -1
+    // ((clockfreq / 2) / outfreq) -1  = CC0
+    //
+    // ((60 / 2) / 2) -1  = CC0
+    //
+    // MAX: (60MHz / 2) / (0 + 1)  = 30MHz
+    // MIN: (60MHz / 2) / (255 + 1)  = 0,117MHz = 117kHz
+    //
+    //       60.0MHz
+    //   0 = 30.0MHz
+    //   1 = 15.0MHz
+    //   2 = 10.0MHz
+    //   3 =  7.5MHz
+    //   4 =  6.0MHz
+    //   5 =  5.0MHz
+    //   9 =  3.0MHz
+    //  14 =  2.0MHz
+    //  29 =  1.0MHz
+    //  59 =  0.5MHz
+    //  74 =  0.4MHz
+    //  99 =  0.3MHz
+    // 149 =  0.2MHz
+    // 255 =  0.11MHz
+    // start with 10MHz
+    TC1->COUNT8.CC[0].reg = 2;
+    // Wait for synchronization
+    while (TC1->COUNT8.SYNCBUSY.bit.CC1) {}
+
+    // Enable timer TC1
+    TC1->COUNT8.CTRLA.bit.ENABLE = 1;
+    // Wait for synchronization
+    while (TC1->COUNT8.SYNCBUSY.bit.ENABLE) {}
+}
+
+void set_D2_period_reg(uint8_t period_reg) {
+    TC1->COUNT8.CC[0].reg = period_reg;
+    while (TC1->COUNT8.SYNCBUSY.bit.CC1) {}
+}
+
+uint8_t get_D2_period_reg() {
+    return TC1->COUNT8.CC[0].reg;
+}
+
+
+
 float gsclock_set_frequency_MHz(float frequency_MHz) {
-    const float frequency_MHz_min = 0.117 ;
+    const float frequency_MHz_min = 0.117;
     const float frequency_MHz_max = 30.0;
     if (frequency_MHz < frequency_MHz_min) {
         frequency_MHz = frequency_MHz_min;
@@ -410,18 +529,25 @@ float gsclock_set_frequency_MHz(float frequency_MHz) {
     // initialise to 1MHz
     uint8_t period_reg = 29;
     float req_raw = ((60 / 2) / frequency_MHz) -1;
-    period_reg = int(req_raw);
+    period_reg = static_cast<int>(req_raw);
     set_D9_period_reg(period_reg);
+    set_D2_period_reg(period_reg);
     // calculate actual used frequency
     frequency_MHz_result = (60.0 / 2) / (period_reg + 1);
     return frequency_MHz_result;
 }
 
-
-void set_D9_period_reg(uint8_t period_reg) {
-    TC3->COUNT8.CC[0].reg = period_reg;
-    while (TC3->COUNT8.SYNCBUSY.bit.CC1);
+float gsclock_get_frequency_MHz() {
+    // uint8_t period_reg = get_D9_period_reg();
+    uint8_t period_reg = get_D2_period_reg();
+    float frequency_MHz_result = (60.0 / 2) / (period_reg + 1);
+    return frequency_MHz_result;
 }
+
+
+
+
+
 
 
 

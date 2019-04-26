@@ -144,7 +144,7 @@ uint32_t spi_baudrate = (0.0001 * 1000 *  1000);
 // 0.28MHz
 // uint32_t spi_baudrate = (0.28 * 1000 *  1000);
 
-uint8_t _latch = 7;
+uint8_t _latch = A5;
 uint8_t _spi_clock = SCK;
 uint8_t _spi_mosi = MOSI;
 uint8_t _spi_miso = MISO;

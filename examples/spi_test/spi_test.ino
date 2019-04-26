@@ -142,7 +142,7 @@ slight_DebugMenu myDebugMenu(Serial, Serial, 15);
 // 0.28MHz
 uint32_t spi_baudrate = (0.28 * 1000 *  1000);
 
-uint8_t latch_pin = 7;
+uint8_t latch_pin = A5;
 
 bool animation_run = true;
 
