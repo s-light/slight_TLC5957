@@ -17,7 +17,7 @@
         ~ slight_DebugMenu
 
     written by stefan krueger (s-light),
-        github@s-light.eu, http://s-light.eu, https://github.com/s-light/
+        git@s-light.eu, http://s-light.eu, https://github.com/s-light/
 
 ******************************************************************************/
 /******************************************************************************
